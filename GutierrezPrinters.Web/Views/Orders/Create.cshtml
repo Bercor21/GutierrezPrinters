@@ -1,0 +1,177 @@
+@model NewOrderViewModel
+@{
+    ViewData["Title"] = "Nuevo ingreso";
+    var hasPrinters = Model.ExistingPrinters.Any();
+    var brands = new[] { "HP", "Epson", "Canon", "Brother", "Xerox", "Ricoh", "Kyocera", "Lexmark", "Samsung", "Zebra", "Konica Minolta", "OKI", "Sharp", "Toshiba", "Pantum" };
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="page-title">Nuevo ingreso</h1>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Cancelar</a>
+        </div>
+
+        <form asp-action="Create" method="post" id="new-order-form"
+              data-lookup-url="@Url.Action("Lookup", "Customers")">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <input type="hidden" asp-for="CustomerId" />
+
+            @* ---------- 1. Cliente ---------- *@
+            <div class="card form-section">
+                <div class="card-header">1. Cliente</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="CustomerPhone" class="form-label"></label>
+                            <input asp-for="CustomerPhone" class="form-control" inputmode="tel" autocomplete="off" placeholder="8888-8888" autofocus />
+                            <div id="customer-lookup-hint" class="lookup-hint form-text">Si el cliente ya vino antes, sus datos se llenan solos.</div>
+                            <span asp-validation-for="CustomerPhone" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CustomerName" class="form-label"></label>
+                            <input asp-for="CustomerName" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CustomerEmail" class="form-label"></label>
+                            <input asp-for="CustomerEmail" class="form-control" inputmode="email" autocomplete="off" />
+                            <span asp-validation-for="CustomerEmail" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CustomerIdNumber" class="form-label"></label>
+                            <input asp-for="CustomerIdNumber" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- 2. Equipo ---------- *@
+            <div class="card form-section">
+                <div class="card-header">2. Impresora</div>
+                <div class="card-body">
+                    <div id="existing-printer-group" class="mb-3 @(hasPrinters ? "" : "d-none")">
+                        <label asp-for="PrinterId" class="form-label">¿Es una impresora que ya vino antes?</label>
+                        <select asp-for="PrinterId" class="form-select">
+                            <option value="">No, es otra impresora (llenar datos abajo)</option>
+                            @foreach (var p in Model.ExistingPrinters)
+                            {
+                                <option value="@p.Id">@p.DisplayName@(string.IsNullOrEmpty(p.SerialNumber) ? "" : " · S/N " + p.SerialNumber)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div id="new-printer-fields" class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Brand" class="form-label"></label>
+                            <input asp-for="Brand" class="form-control" list="brand-list" autocomplete="off" />
+                            <datalist id="brand-list">
+                                @foreach (var brand in brands)
+                                {
+                                    <option value="@brand"></option>
+                                }
+                            </datalist>
+                            <span asp-validation-for="Brand" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Model" class="form-label"></label>
+                            <input asp-for="Model" class="form-control" autocomplete="off" placeholder="Ej: Smart Tank 515" />
+                            <span asp-validation-for="Model" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="SerialNumber" class="form-label"></label>
+                            <input asp-for="SerialNumber" class="form-control" autocomplete="off" />
+                            <div class="form-text">Opcional. Viene en la etiqueta de atrás o de abajo.</div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label asp-for="Technology" class="form-label"></label>
+                            <select asp-for="Technology" asp-items="Html.GetEnumSelectList<PrinterTechnology>()" class="form-select"></select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label asp-for="Category" class="form-label"></label>
+                            <select asp-for="Category" asp-items="Html.GetEnumSelectList<PrinterCategory>()" class="form-select"></select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-check-inline">
+                                <input asp-for="IsMultifunction" class="form-check-input" />
+                                <label asp-for="IsMultifunction" class="form-check-label"></label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input asp-for="IsColor" class="form-check-input" />
+                                <label asp-for="IsColor" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="PrinterDescription" class="form-label"></label>
+                            <input asp-for="PrinterDescription" class="form-control" placeholder="Color, bandejas extra, base, fax..." />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- 3. Cómo viene ---------- *@
+            <div class="card form-section">
+                <div class="card-header">3. Cómo la dejan</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="form-label d-block">Accesorios que deja el cliente</span>
+                        <div class="row row-cols-2 row-cols-md-3 g-1">
+                            @foreach (var option in NewOrderViewModel.AccessoryOptions)
+                            {
+                                var id = "acc-" + Array.IndexOf(NewOrderViewModel.AccessoryOptions, option);
+                                <div class="col">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedAccessories" value="@option" id="@id"
+                                               checked="@Model.SelectedAccessories.Contains(option)" />
+                                        <label class="form-check-label" for="@id">@option</label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <input asp-for="OtherAccessories" class="form-control form-control-sm mt-2" placeholder="Otros accesorios" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="PhysicalCondition" class="form-label"></label>
+                        <textarea asp-for="PhysicalCondition" class="form-control" rows="2" placeholder="Golpes, rayones, piezas quebradas o faltantes..."></textarea>
+                    </div>
+                    <div>
+                        <label asp-for="ReportedIssue" class="form-label"></label>
+                        <textarea asp-for="ReportedIssue" class="form-control" rows="3" placeholder="Lo que dice el cliente, con sus palabras"></textarea>
+                        <span asp-validation-for="ReportedIssue" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- 4. Cobro y fecha ---------- *@
+            <div class="card form-section">
+                <div class="card-header">4. Cobro y fecha <span class="fw-normal text-body-secondary">(opcional)</span></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-4">
+                            <label asp-for="Quote" class="form-label"></label>
+                            <input asp-for="Quote" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <span asp-validation-for="Quote" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label asp-for="Deposit" class="form-label"></label>
+                            <input asp-for="Deposit" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <span asp-validation-for="Deposit" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="EstimatedDate" class="form-label"></label>
+                            <input asp-for="EstimatedDate" type="date" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-lg px-5">Guardar ingreso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,8 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Inicio";
+    int Count(params OrderStatus[] statuses) => statuses.Sum(s => Model.CountByStatus.GetValueOrDefault(s));
 }
 
-<div class="text-center">
-    <h1 class="display-4">Gutierrez Printers</h1>
-    <p>Sistema de control de reparaciones</p>
+<h1 class="page-title mb-3">Panel del taller</h1>
+
+<form asp-controller="Orders" asp-action="Index" method="get" class="search-box mb-4" role="search">
+    <div class="input-group input-group-lg">
+        <input type="search" name="q" class="form-control" placeholder="Buscar por orden, cliente, teléfono, modelo o serie" aria-label="Buscar" autocomplete="off" />
+        <button class="btn btn-primary" type="submit">Buscar</button>
+    </div>
+</form>
+
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-lg">
+        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="activas">
+            <div class="stat-value">@Model.OpenCount</div>
+            <div class="stat-label">En el taller</div>
+        </a>
+    </div>
+    <div class="col-6 col-lg">
+        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="por-diagnosticar">
+            <div class="stat-value">@Count(OrderStatus.Received, OrderStatus.Diagnosis)</div>
+            <div class="stat-label">Por diagnosticar</div>
+        </a>
+    </div>
+    <div class="col-6 col-lg">
+        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="esperando">
+            <div class="stat-value">@Count(OrderStatus.AwaitingApproval, OrderStatus.AwaitingParts)</div>
+            <div class="stat-label">Esperando cliente o repuesto</div>
+        </a>
+    </div>
+    <div class="col-6 col-lg">
+        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.InRepair">
+            <div class="stat-value">@Count(OrderStatus.InRepair)</div>
+            <div class="stat-label">En reparación</div>
+        </a>
+    </div>
+    <div class="col-12 col-lg">
+        <a class="stat-card border-success" asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.Ready">
+            <div class="stat-value text-success">@Count(OrderStatus.Ready)</div>
+            <div class="stat-label">Listas para entregar</div>
+        </a>
+    </div>
+</div>
+
+@if (Model.Abandoned.Any())
+{
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning-subtle">
+            Listas sin retirar hace más de @Model.AbandonedAfterDays días (@Model.Abandoned.Count)
+        </div>
+        <div class="list-group list-group-flush">
+            @foreach (var order in Model.Abandoned)
+            {
+                <partial name="_OrderItem" model="order" />
+            }
+        </div>
+    </div>
+}
+
+@if (Model.Overdue.Any())
+{
+    <div class="card border-danger-subtle mb-4">
+        <div class="card-header bg-danger-subtle">
+            Atrasadas: ya pasó la fecha estimada (@Model.Overdue.Count)
+        </div>
+        <div class="list-group list-group-flush">
+            @foreach (var order in Model.Overdue)
+            {
+                <partial name="_OrderItem" model="order" />
+            }
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Últimos ingresos</span>
+        <a class="small" asp-controller="Orders" asp-action="Index">Ver todas</a>
+    </div>
+    @if (Model.Recent.Any())
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var order in Model.Recent)
+            {
+                <partial name="_OrderItem" model="order" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card-body text-center text-body-secondary py-5">
+            <p class="mb-3">Todavía no hay impresoras en el taller.</p>
+            <a class="btn btn-primary" asp-controller="Orders" asp-action="Create">Registrar el primer ingreso</a>
+        </div>
+    }
 </div>

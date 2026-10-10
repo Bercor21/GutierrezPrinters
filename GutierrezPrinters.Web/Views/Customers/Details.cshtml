@@ -1,0 +1,82 @@
+@model Customer
+@inject IOptions<ShopOptions> ShopSettings
+@{
+    ViewData["Title"] = Model.Name;
+    var shop = ShopSettings.Value;
+    var firstName = Model.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+    var whatsapp = WhatsApp.Link(Model, $"Hola {firstName}, le saluda {shop.Name}.", shop);
+    var orders = Model.Printers
+        .SelectMany(p => p.Orders.Select(o => { o.Printer = p; return o; }))
+        .OrderByDescending(o => o.Id)
+        .ToList();
+    foreach (var p in Model.Printers)
+    {
+        p.Customer = Model;
+    }
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <h1 class="page-title">@Model.Name</h1>
+        <div class="text-body-secondary">Cliente desde @Display.Date(Model.CreatedAt)</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" asp-controller="Orders" asp-action="Create" asp-route-customerId="@Model.Id">+ Nuevo ingreso</a>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
+        <a class="btn btn-whatsapp" href="@whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">Datos</div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Teléfono</dt><dd><a href="tel:@Display.Digits(Model.Phone)">@Model.Phone</a></dd>
+                    <dt>Correo</dt><dd>@Display.OrEmpty(Model.Email)</dd>
+                    <dt>Cédula</dt><dd>@Display.OrEmpty(Model.IdNumber)</dd>
+                    <dt>Notas</dt><dd>@Display.OrEmpty(Model.Notes)</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Impresoras (@Model.Printers.Count)</div>
+            <div class="list-group list-group-flush">
+                @foreach (var p in Model.Printers.OrderByDescending(p => p.Id))
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                        <div class="min-w-0">
+                            <a asp-controller="Printers" asp-action="Details" asp-route-id="@p.Id" class="fw-semibold">@p.DisplayName</a>
+                            <div class="order-meta text-truncate">
+                                @(string.IsNullOrEmpty(p.SerialNumber) ? "Sin serie" : "S/N " + p.SerialNumber)
+                                · @p.Orders.Count @(p.Orders.Count == 1 ? "vez" : "veces") en el taller
+                            </div>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary flex-shrink-0" asp-controller="Orders" asp-action="Create" asp-route-printerId="@p.Id">Ingresar</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">Historial de órdenes (@orders.Count)</div>
+            @if (orders.Any())
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var order in orders)
+                    {
+                        <partial name="_OrderItem" model="order" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card-body text-body-secondary">Sin órdenes.</div>
+            }
+        </div>
+    </div>
+</div>

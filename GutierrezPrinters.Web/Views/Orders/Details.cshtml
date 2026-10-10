@@ -1,0 +1,165 @@
+@model RepairOrder
+@inject IOptions<ShopOptions> ShopSettings
+@{
+    var shop = ShopSettings.Value;
+    var printer = Model.Printer!;
+    var customer = printer.Customer!;
+    ViewData["Title"] = $"Orden {Model.Number}";
+    var whatsapp = WhatsApp.Link(customer, WhatsApp.OrderMessage(Model, shop), shop);
+    var suggestWhatsApp = TempData["SuggestWhatsApp"] is true;
+    var statuses = Enum.GetValues<OrderStatus>();
+    var warranty = Model.WarrantyDays is > 0
+        ? $"{Model.WarrantyDays} días" + (Model.WarrantyUntil.HasValue ? $" (hasta {Display.Date(Model.WarrantyUntil)})" : "")
+        : "—";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="order-number-lg">@Model.Number</span>
+            <partial name="_StatusBadge" model="Model.Status" />
+        </div>
+        <div class="fw-semibold">@customer.Name · @printer.DisplayName</div>
+        <div class="small text-body-secondary">Ingresó el @Display.DateTimeShort(Model.ReceivedAt)</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-primary" asp-action="Label" asp-route-id="@Model.Id" target="_blank">Etiqueta</a>
+        <a class="btn btn-outline-primary" asp-action="Sheet" asp-route-id="@Model.Id" target="_blank">Hoja de ingreso</a>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
+        <a class="btn btn-whatsapp" href="@whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+</div>
+
+@if (suggestWhatsApp)
+{
+    <div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>¿Le avisás al cliente del cambio de estado?</span>
+        <a class="btn btn-whatsapp btn-sm" href="@whatsapp" target="_blank" rel="noopener">Enviar mensaje por WhatsApp</a>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="section-title">Estado de la reparación</div>
+        <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-center">
+            <div class="col-12 col-md">
+                <select name="status" class="form-select" aria-label="Nuevo estado">
+                    @foreach (var s in statuses)
+                    {
+                        <option value="@s" selected="@(s == Model.Status)">@s.Name()</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-auto d-grid">
+                <button type="submit" class="btn btn-primary">Cambiar estado</button>
+            </div>
+        </form>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            @if (Model.Status != OrderStatus.Ready && !Model.IsClosed)
+            {
+                <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                    <input type="hidden" name="status" value="@OrderStatus.Ready" />
+                    <button type="submit" class="btn btn-success btn-sm">Marcar como lista</button>
+                </form>
+            }
+            @if (Model.Status == OrderStatus.Ready)
+            {
+                <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                    <input type="hidden" name="status" value="@OrderStatus.Delivered" />
+                    <button type="submit" class="btn btn-dark btn-sm">Entregar al cliente</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span>Cliente</span>
+                <a class="small fw-normal" asp-controller="Customers" asp-action="Details" asp-route-id="@customer.Id">Ver ficha</a>
+            </div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Nombre</dt><dd>@customer.Name</dd>
+                    <dt>Teléfono</dt><dd><a href="tel:@Display.Digits(customer.Phone)">@customer.Phone</a></dd>
+                    <dt>Correo</dt><dd>@Display.OrEmpty(customer.Email)</dd>
+                    <dt>Cédula</dt><dd>@Display.OrEmpty(customer.IdNumber)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span>Impresora</span>
+                <a class="small fw-normal" asp-controller="Printers" asp-action="Details" asp-route-id="@printer.Id">Ver historial</a>
+            </div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Equipo</dt><dd>@printer.DisplayName</dd>
+                    <dt>Serie</dt><dd>@Display.OrEmpty(printer.SerialNumber)</dd>
+                    <dt>Tecnología</dt><dd>@printer.Technology.Name()</dd>
+                    <dt>Tipo</dt><dd>@printer.Category.Name()@(printer.IsMultifunction ? " · multifuncional" : "")@(printer.IsColor ? " · color" : "")</dd>
+                    @if (!string.IsNullOrWhiteSpace(printer.Description))
+                    {
+                        <dt>Detalles</dt><dd>@printer.Description</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Cómo la dejaron</div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Falla reportada</dt><dd>@Model.ReportedIssue</dd>
+                    <dt>Accesorios</dt><dd>@Display.OrEmpty(Model.Accessories)</dd>
+                    <dt>Estado físico</dt><dd>@Display.OrEmpty(Model.PhysicalCondition)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span>Trabajo del taller</span>
+                <a class="small fw-normal" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
+            </div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Diagnóstico</dt><dd>@Display.OrEmpty(Model.Diagnosis)</dd>
+                    <dt>Pendientes</dt><dd>@Display.OrEmpty(Model.PendingWork)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Cobro</div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Cotización</dt><dd>@Display.Money(Model.Quote)</dd>
+                    <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
+                    <dt>Saldo</dt><dd class="fw-semibold">@Display.Money(Model.Balance)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Fechas</div>
+            <div class="card-body">
+                <dl class="data-list">
+                    <dt>Ingreso</dt><dd>@Display.DateTimeShort(Model.ReceivedAt)</dd>
+                    <dt>Estimada</dt><dd>@Display.Date(Model.EstimatedDate)</dd>
+                    <dt>Lista desde</dt><dd>@Display.DateTimeShort(Model.ReadyAt)</dd>
+                    <dt>Entregada</dt><dd>@Display.DateTimeShort(Model.DeliveredAt)</dd>
+                    <dt>Garantía</dt><dd>@warranty</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

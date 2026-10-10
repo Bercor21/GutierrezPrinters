@@ -4,6 +4,21 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Identificador de los "secretos de usuario": ahí van la contraseña de Supabase
+         y la del usuario administrador. Esos secretos viven en tu compu, NUNCA en GitHub. -->
+    <UserSecretsId>gutierrez-printers-web-2026</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Base de datos PostgreSQL (Supabase) con Entity Framework Core -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <!-- Login con ASP.NET Core Identity guardado en la misma base de datos -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <!-- Comandos Add-Migration / Update-Database de la Consola del Administrador de paquetes -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

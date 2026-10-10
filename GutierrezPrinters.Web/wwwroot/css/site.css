@@ -1,5 +1,20 @@
+/* Gutierrez Printers - estilos generales (encima de Bootstrap 5) */
+
+:root {
+  --gp-ink: #13263f;
+  --gp-brand: #1f4e8c;
+  --gp-brand-dark: #173d6e;
+  --gp-accent: #f2a541;
+  --gp-bg: #f3f5f8;
+  --gp-card-border: #e2e7ee;
+  --bs-body-bg: var(--gp-bg);
+  --bs-link-color: var(--gp-brand);
+  --bs-link-color-rgb: 31, 78, 140;
+  --bs-link-hover-color: var(--gp-brand-dark);
+}
+
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 @media (min-width: 768px) {
@@ -8,24 +23,212 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
-  margin-bottom: 60px;
+  background: var(--gp-bg);
+  color: var(--gp-ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+main {
+  flex: 1;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* ---- Barra superior ---- */
+.app-nav {
+  background: var(--gp-ink);
+}
+
+.app-nav .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-nav .navbar-brand .brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.45rem;
+  background: var(--gp-accent);
+  color: var(--gp-ink);
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-right: 0.5rem;
+}
+
+.app-nav .nav-link.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--gp-brand);
+  --bs-btn-border-color: var(--gp-brand);
+  --bs-btn-hover-bg: var(--gp-brand-dark);
+  --bs-btn-hover-border-color: var(--gp-brand-dark);
+  --bs-btn-active-bg: var(--gp-brand-dark);
+  --bs-btn-active-border-color: var(--gp-brand-dark);
+}
+
+.btn-whatsapp {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #1f9e55;
+  --bs-btn-border-color: #1f9e55;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #187f44;
+  --bs-btn-hover-border-color: #187f44;
+}
+
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(31, 78, 140, 0.25);
+}
+
+/* ---- Tarjetas y secciones ---- */
+.card {
+  border-color: var(--gp-card-border);
+  border-radius: 0.75rem;
+}
+
+.card-header {
+  background: #fff;
+  border-bottom-color: var(--gp-card-border);
+  font-weight: 600;
+}
+
+.section-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5b6b80;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.order-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--gp-brand);
+}
+
+.order-number-lg {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gp-brand);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Datos en formato "etiqueta: valor" */
+.data-list {
+  display: grid;
+  grid-template-columns: minmax(8rem, 35%) 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+}
+
+.data-list dt {
+  font-weight: 500;
+  color: #5b6b80;
+}
+
+.data-list dd {
+  margin: 0;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+/* ---- Indicadores del panel ---- */
+.stat-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--gp-card-border);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  height: 100%;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.stat-card:hover {
+  border-color: var(--gp-brand);
+  color: inherit;
+}
+
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-card .stat-label {
+  font-size: 0.85rem;
+  color: #5b6b80;
+}
+
+/* ---- Listas de órdenes ---- */
+.order-item {
+  padding: 0.75rem 1rem;
+}
+
+.order-item .order-meta {
+  font-size: 0.85rem;
+  color: #5b6b80;
+}
+
+/* Buscador grande */
+.search-box .form-control {
+  font-size: 1.05rem;
+}
+
+/* Formularios */
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.form-section + .form-section {
+  margin-top: 1rem;
+}
+
+.lookup-hint {
+  font-size: 0.85rem;
+}
+
+/* Pie */
+.app-footer {
+  font-size: 0.8rem;
+  color: #7a889b;
+  padding: 1rem 0 1.5rem;
+}
+
+/* Login */
+.auth-wrapper {
+  min-height: 80vh;
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Al imprimir desde una pantalla normal, ocultar la navegación. */
+@media print {
+  .app-nav, .app-footer, .no-print {
+    display: none !important;
+  }
+}
+
+.min-w-0 {
+  min-width: 0;
 }
