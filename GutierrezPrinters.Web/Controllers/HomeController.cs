@@ -13,7 +13,7 @@ namespace GutierrezPrinters.Web.Controllers
 
         public IActionResult Order(int id)
         {
-            if (id <= 0 && id >= 9999)
+            if (id <= 0 || id > 9999)
             {
                 return BadRequest("Número de orden inválido");
             }
