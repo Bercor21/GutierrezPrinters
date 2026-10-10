@@ -33,13 +33,16 @@ public static class WhatsApp
         return order.Status switch
         {
             OrderStatus.Received =>
-                $"{hello} Recibimos {reference}. Le avisaremos apenas tengamos el diagnóstico.",
+                $"{hello} Recibimos {reference}. El diagnóstico tiene un costo de {Display.Money(shop.DiagnosisFee)}; " +
+                "le avisaremos apenas lo tengamos.",
             OrderStatus.Diagnosis =>
                 $"{hello} Le contamos que {reference} está en diagnóstico.",
             OrderStatus.AwaitingApproval =>
                 $"{hello} Ya revisamos {reference}." +
                 (string.IsNullOrWhiteSpace(order.Diagnosis) ? "" : $" Diagnóstico: {order.Diagnosis.Trim()}.") +
-                (order.Quote.HasValue ? $" Cotización: {Display.Money(order.Quote)}." : "") +
+                (order.Quote.HasValue
+                    ? $" La reparación cuesta {Display.Money(order.Quote)}, más el diagnóstico de {Display.Money(shop.DiagnosisFee)}."
+                    : "") +
                 " ¿Desea que procedamos con la reparación?",
             OrderStatus.AwaitingParts =>
                 $"{hello} Le contamos que {reference} está esperando un repuesto. Le avisamos apenas llegue.",
@@ -47,7 +50,7 @@ public static class WhatsApp
                 $"{hello} Le contamos que {reference} ya está en reparación.",
             OrderStatus.Ready =>
                 $"{hello} ¡Buenas noticias! {Capitalize(reference)} ya está lista para retirar." +
-                (due is > 0 ? $" Saldo pendiente: {Display.Money(due)}." : "") +
+                (order.HasFinalPrice && due > 0 ? $" Total a cancelar: {Display.Money(due)}." : "") +
                 (shop.WarrantyDays > 0 ? $" La reparación tiene {Display.Warranty(shop.WarrantyDays)} de garantía." : ""),
             OrderStatus.NotRepaired =>
                 $"{hello} Lamentablemente {reference} no se pudo reparar." +
@@ -74,7 +77,7 @@ public static class WhatsApp
         var due = order.AmountDue(shop.DiagnosisFee);
 
         return $"{hello} Le recordamos que {reference} está lista para retirar desde el {Display.Date(order.ReadyAt)}." +
-               (due is > 0 ? $" Saldo pendiente: {Display.Money(due)}." : "") +
+               (order.HasFinalPrice && due > 0 ? $" Total a cancelar: {Display.Money(due)}." : "") +
                " Le pedimos pasar a retirarla lo antes posible; de lo contrario será enviada a reciclaje, " +
                "según las condiciones aceptadas al dejarla.";
     }

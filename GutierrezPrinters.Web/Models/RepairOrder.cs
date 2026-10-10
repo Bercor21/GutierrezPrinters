@@ -41,7 +41,7 @@ public class RepairOrder
     // ---- Plata (colones) ----
     [Precision(12, 2)]
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
-    [Display(Name = "Cotización (₡)")]
+    [Display(Name = "Costo de la reparación (₡)")]
     public decimal? Quote { get; set; }
 
     [Precision(12, 2)]
@@ -71,14 +71,17 @@ public class RepairOrder
     // ---- Calculados (no se guardan en la base de datos) ----
     public string Number => FormatNumber(Id);
 
-    public decimal? Balance => Quote.HasValue ? Quote.Value - Deposit : null;
-
-    // Si no se reparó, el cliente paga solo el diagnóstico (menos el adelanto).
-    // Si se reparó, el diagnóstico va incluido en la cotización.
+    // Cobro: el diagnóstico se cobra siempre. Si se repara, la reparación (Quote) se cobra aparte.
+    // Si no se pudo reparar, el cliente paga solo el diagnóstico.
     public bool ChargesDiagnosisOnly => Status is OrderStatus.NotRepaired or OrderStatus.ReturnedUnrepaired;
 
-    public decimal? AmountDue(decimal diagnosisFee) =>
-        ChargesDiagnosisOnly ? Math.Max(0, diagnosisFee - Deposit) : Balance;
+    public decimal Total(decimal diagnosisFee) => diagnosisFee + (ChargesDiagnosisOnly ? 0 : Quote ?? 0);
+
+    // Lo que falta por pagar (total menos el adelanto).
+    public decimal AmountDue(decimal diagnosisFee) => Math.Max(0, Total(diagnosisFee) - Deposit);
+
+    // ¿Ya se sabe cuánto va a pagar? (si se va a reparar, hace falta la cotización)
+    public bool HasFinalPrice => ChargesDiagnosisOnly || Quote.HasValue;
 
     // Ya salió del taller (entregada o reciclada): no cuenta como pendiente.
     public bool IsClosed => IsClosedStatus(Status);

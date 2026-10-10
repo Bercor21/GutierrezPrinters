@@ -394,7 +394,7 @@ public class OrdersController : Controller
             {
                 "Orden", "Estado", "Ingreso", "Cliente", "Teléfono", "Correo", "Marca", "Modelo", "Serie",
                 "Tecnología", "Tipo", "Accesorios", "Estado físico", "Falla reportada", "Diagnóstico",
-                "Pendientes", "Cotización", "Adelanto", "Saldo", "Fecha estimada", "Lista desde",
+                "Pendientes", "Diagnóstico", "Reparación", "Adelanto", "Saldo", "Fecha estimada", "Lista desde",
                 "Entregada", "Garantía (días)"
             },
             orders.Select(o => new object?[]
@@ -404,7 +404,8 @@ public class OrdersController : Controller
                 o.Printer?.Brand, o.Printer?.Model, o.Printer?.SerialNumber,
                 o.Printer?.Technology.Name(), o.Printer?.Category.Name(),
                 o.Accessories, o.PhysicalCondition, o.ReportedIssue, o.Diagnosis, o.PendingWork,
-                o.Quote, o.Deposit, o.Balance,
+                _shop.DiagnosisFee, o.ChargesDiagnosisOnly ? null : o.Quote, o.Deposit,
+                o.HasFinalPrice ? o.AmountDue(_shop.DiagnosisFee) : null,
                 o.EstimatedDate.HasValue ? Display.Date(o.EstimatedDate) : null,
                 o.ReadyAt.HasValue ? Display.DateTimeShort(o.ReadyAt) : null,
                 o.DeliveredAt.HasValue ? Display.DateTimeShort(o.DeliveredAt) : null,

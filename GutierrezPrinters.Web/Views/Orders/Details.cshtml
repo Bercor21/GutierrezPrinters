@@ -133,7 +133,7 @@
                     <button type="submit" class="btn btn-dark">Entregar al cliente</button>
                 </form>
                 <span class="text-body-secondary">
-                    @(due is > 0 ? $"Cobrar {Display.Money(due)}." : "No tiene saldo pendiente.")
+                    @(!Model.HasFinalPrice ? $"Falta poner el costo de la reparación (Editar). Por ahora: {Display.Money(due)} del diagnóstico." : due > 0 ? $"Cobrar {Display.Money(due)}: diagnóstico y reparación." : "No tiene saldo pendiente.")
                     Se le dan @Display.Warranty(Model.WarrantyDays ?? shop.WarrantyDays) de garantía.
                 </span>
             }
@@ -223,22 +223,18 @@
     <section>
         <div class="facts-head"><h2>Cobro</h2></div>
         <dl class="data-list">
+            <dt>Diagnóstico</dt><dd>@Display.Money(shop.DiagnosisFee)</dd>
             @if (Model.ChargesDiagnosisOnly)
             {
-                <dt>Diagnóstico</dt><dd>@Display.Money(shop.DiagnosisFee)</dd>
-                <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
-                <dt>A cobrar</dt><dd class="total">@Display.Money(due)</dd>
+                <dt>Reparación</dt><dd>No se reparó</dd>
             }
             else
             {
-                <dt>Cotización</dt><dd>@Display.Money(Model.Quote)</dd>
-                <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
-                <dt>A cobrar</dt><dd class="total">@Display.Money(due)</dd>
-                @if (!Model.IsClosed)
-                {
-                    <dt>Si no se repara</dt><dd>Diagnóstico de @Display.Money(shop.DiagnosisFee)</dd>
-                }
+                <dt>Reparación</dt><dd>@(Model.Quote.HasValue ? Display.Money(Model.Quote) : "Sin cotizar todavía")</dd>
             }
+            <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
+            <dt>A cobrar</dt>
+            <dd class="total">@Display.Money(due)@(Model.HasFinalPrice ? "" : " + la reparación")</dd>
         </dl>
     </section>
     <section>

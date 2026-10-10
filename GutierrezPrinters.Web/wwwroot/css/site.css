@@ -37,12 +37,13 @@
   --gp-cyan: #1a619b;         /* azul del logo: acciones y "se está trabajando" */
   --gp-cyan-dark: #134a78;
   --gp-cyan-tint: #e6eff7;
-  --gp-magenta: #b8166f;      /* "ojo con esta" */
-  --gp-magenta-dark: #94125a;
-  --gp-magenta-tint: #fbe8f2;
-  --gp-yellow: #ffd23f;       /* nuevo ingreso y "esperando a alguien" */
-  --gp-yellow-dark: #5c4700;
-  --gp-yellow-tint: #fff5d1;
+  /* Los colores de las manchas de tinta del logo */
+  --gp-magenta: #9a1f5f;      /* "ojo con esta" */
+  --gp-magenta-dark: #7a184b;
+  --gp-magenta-tint: #f8e7f0;
+  --gp-yellow: #e3a51c;       /* nuevo ingreso y "esperando a alguien" */
+  --gp-yellow-dark: #6b4a00;
+  --gp-yellow-tint: #fcf1d8;
   --gp-green: #1d7f46;        /* lista para retirar */
   --gp-green-dark: #17663a;
   --gp-green-tint: #e3f3e9;
@@ -207,11 +208,11 @@ main {
   --bs-btn-bg: var(--gp-yellow);
   --bs-btn-border-color: var(--gp-yellow);
   --bs-btn-hover-color: var(--gp-ink);
-  --bs-btn-hover-bg: #ffdc66;
-  --bs-btn-hover-border-color: #ffdc66;
+  --bs-btn-hover-bg: #ebb43d;
+  --bs-btn-hover-border-color: #ebb43d;
   --bs-btn-active-color: var(--gp-ink);
-  --bs-btn-active-bg: #f2c21f;
-  --bs-btn-active-border-color: #f2c21f;
+  --bs-btn-active-bg: #cf9414;
+  --bs-btn-active-border-color: #cf9414;
   font-weight: 700;
 }
 
@@ -406,13 +407,21 @@ main {
 
 .btn:focus-visible,
 .tabbar a:focus-visible,
-.app-links a:focus-visible,
-.brand:focus-visible,
 .flow a:focus-visible,
-.row-link:focus-visible {
-  outline: 3px solid var(--gp-yellow);
+.row-link:focus-visible,
+.order-row:focus-visible {
+  outline: 3px solid var(--gp-cyan);
   outline-offset: 2px;
   box-shadow: none;
+}
+
+/* En la barra oscura, el foco se ve en dorado. */
+.app-nav .btn:focus-visible,
+.app-links a:focus-visible,
+.brand:focus-visible,
+.user-menu .dropdown-toggle:focus-visible {
+  outline: 3px solid var(--gp-yellow);
+  outline-offset: 2px;
 }
 
 .form-control:focus,
@@ -523,10 +532,10 @@ main {
 
 .status.tone-cyan { background: var(--gp-cyan-tint); color: var(--gp-cyan-dark); }
 .status.tone-yellow { background: var(--gp-yellow-tint); color: var(--gp-yellow-dark); }
-.status.tone-yellow::before { background: #e0ae00; }
+.status.tone-yellow::before { background: var(--gp-yellow); }
 .status.tone-green { background: var(--gp-green-tint); color: var(--gp-green-dark); }
 .status.tone-magenta { background: var(--gp-magenta-tint); color: var(--gp-magenta-dark); }
-.status.tone-neutral::before { background: #8a93a6; }
+.status.tone-neutral::before { background: #767676; }
 .status.tone-closed { background: transparent; box-shadow: inset 0 0 0 1px var(--gp-line); color: var(--gp-ink-2); }
 .status.tone-closed::before { background: var(--gp-ink); }
 
@@ -750,7 +759,7 @@ a.order-row:hover {
 }
 
 .dot.tone-cyan { background: var(--gp-cyan); }
-.dot.tone-yellow { background: #e0ae00; }
+.dot.tone-yellow { background: var(--gp-yellow); }
 .dot.tone-green { background: var(--gp-green); }
 .dot.tone-magenta { background: var(--gp-magenta); }
 
@@ -858,7 +867,7 @@ a.order-row:hover {
 .ticket.tone-yellow { --tone: var(--gp-yellow); }
 .ticket.tone-green { --tone: var(--gp-green); }
 .ticket.tone-magenta { --tone: var(--gp-magenta); }
-.ticket.tone-neutral { --tone: #8a93a6; }
+.ticket.tone-neutral { --tone: #767676; }
 .ticket.tone-closed { --tone: var(--gp-ink); }
 
 .ticket .who {
@@ -1021,7 +1030,7 @@ a.order-row:hover {
 
 .notice.notice-magenta {
   background: var(--gp-magenta-tint);
-  border-color: #f0bcd9;
+  border-color: #e9bfd5;
   color: var(--gp-magenta-dark);
 }
 

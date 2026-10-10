@@ -22,7 +22,7 @@ public class ShopOptions
     // Garantía que se pone sola al entregar una impresora reparada (180 días = 6 meses).
     public int WarrantyDays { get; set; } = 180;
 
-    // Lo que se cobra por el diagnóstico cuando la impresora no se repara.
+    // Lo que cuesta el diagnóstico. Se cobra siempre al retirar; si se repara, la reparación va aparte.
     public decimal DiagnosisFee { get; set; } = 7000;
 
     // Días que una impresora puede estar lista sin que la retiren antes de avisar

@@ -113,10 +113,10 @@
 
         <h2>Cobro y fechas</h2>
         <div class="money">
-            <div class="box"><span>Cotización</span><strong>@(Model.Quote.HasValue ? Display.Money(Model.Quote) : "₡")</strong></div>
+            <div class="box"><span>Diagnóstico</span><strong>@Display.Money(shop.DiagnosisFee)</strong></div>
+            <div class="box"><span>Reparación</span><strong>@(Model.ChargesDiagnosisOnly ? "No se reparó" : Model.Quote.HasValue ? Display.Money(Model.Quote) : "₡")</strong></div>
             <div class="box"><span>Adelanto</span><strong>@Display.Money(Model.Deposit)</strong></div>
-            <div class="box"><span>Saldo</span><strong>@(Model.Balance.HasValue ? Display.Money(Model.Balance) : "₡")</strong></div>
-            <div class="box"><span>Diagnóstico si no se repara</span><strong>@Display.Money(shop.DiagnosisFee)</strong></div>
+            <div class="box"><span>Saldo</span><strong>@(Model.HasFinalPrice ? Display.Money(Model.AmountDue(shop.DiagnosisFee)) : "₡")</strong></div>
         </div>
         <div class="grid" style="margin-top:2mm">
             <div class="field"><b>Fecha estimada:</b> <span>@(Model.EstimatedDate.HasValue ? Display.Date(Model.EstimatedDate) : "")</span></div>

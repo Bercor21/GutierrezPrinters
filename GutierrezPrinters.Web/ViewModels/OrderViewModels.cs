@@ -79,7 +79,7 @@ public class NewOrderViewModel
     public string ReportedIssue { get; set; } = "";
 
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
-    [Display(Name = "Cotización (₡)")]
+    [Display(Name = "Costo de la reparación (₡)")]
     public decimal? Quote { get; set; }
 
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
@@ -126,7 +126,7 @@ public class OrderEditViewModel
     public string? PendingWork { get; set; }
 
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
-    [Display(Name = "Cotización (₡)")]
+    [Display(Name = "Costo de la reparación (₡)")]
     public decimal? Quote { get; set; }
 
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
