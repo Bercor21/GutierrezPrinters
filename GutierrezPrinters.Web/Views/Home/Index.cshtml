@@ -1,100 +1,112 @@
 @model DashboardViewModel
+@inject IOptions<ShopOptions> ShopSettings
 @{
     ViewData["Title"] = "Inicio";
+    var shop = ShopSettings.Value;
     int Count(params OrderStatus[] statuses) => statuses.Sum(s => Model.CountByStatus.GetValueOrDefault(s));
+    var today = Display.Today.ToString("dddd d 'de' MMMM", System.Globalization.CultureInfo.CurrentCulture);
+    today = char.ToUpper(today[0]) + today[1..];
+    var attentionCount = Model.Abandoned.Count + Model.Overdue.Count;
 }
 
-<h1 class="page-title mb-3">Panel del taller</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <h1 class="page-title">Panel del taller</h1>
+    <span class="today">@today</span>
+</div>
 
-<form asp-controller="Orders" asp-action="Index" method="get" class="search-box mb-4" role="search">
-    <div class="input-group input-group-lg">
-        <input type="search" name="q" class="form-control" placeholder="Buscar por orden, cliente, teléfono, modelo o serie" aria-label="Buscar" autocomplete="off" />
+<form asp-controller="Orders" asp-action="Index" method="get" class="search-hero mb-3" role="search">
+    <div class="input-group">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        <input type="search" name="q" class="form-control" placeholder="Orden, cliente, teléfono, modelo o serie" aria-label="Buscar" autocomplete="off" />
         <button class="btn btn-primary" type="submit">Buscar</button>
     </div>
 </form>
 
-<div class="row g-2 g-md-3 mb-4">
-    <div class="col-6 col-lg">
-        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="activas">
-            <div class="stat-value">@Model.OpenCount</div>
-            <div class="stat-label">En el taller</div>
-        </a>
-    </div>
-    <div class="col-6 col-lg">
-        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="por-diagnosticar">
-            <div class="stat-value">@Count(OrderStatus.Received, OrderStatus.Diagnosis)</div>
-            <div class="stat-label">Por diagnosticar</div>
-        </a>
-    </div>
-    <div class="col-6 col-lg">
-        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="esperando">
-            <div class="stat-value">@Count(OrderStatus.AwaitingApproval, OrderStatus.AwaitingParts)</div>
-            <div class="stat-label">Esperando cliente o repuesto</div>
-        </a>
-    </div>
-    <div class="col-6 col-lg">
-        <a class="stat-card" asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.InRepair">
-            <div class="stat-value">@Count(OrderStatus.InRepair)</div>
-            <div class="stat-label">En reparación</div>
-        </a>
-    </div>
-    <div class="col-12 col-lg">
-        <a class="stat-card border-success" asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.Ready">
-            <div class="stat-value text-success">@Count(OrderStatus.Ready)</div>
-            <div class="stat-label">Listas para entregar</div>
-        </a>
-    </div>
-</div>
+@* Cuántas hay en cada etapa, en el orden en que avanza el trabajo. *@
+<nav class="flow mb-4" aria-label="Impresoras por etapa">
+    <a class="flow-total" asp-controller="Orders" asp-action="Index" asp-route-estado="activas">
+        <span class="value">@Model.OpenCount</span>
+        <span class="label">en el taller</span>
+    </a>
+    <a asp-controller="Orders" asp-action="Index" asp-route-estado="por-diagnosticar">
+        <span class="value">@Count(OrderStatus.Received, OrderStatus.Diagnosis)</span>
+        <span class="label"><span class="dot tone-cyan"></span>Por diagnosticar</span>
+    </a>
+    <a asp-controller="Orders" asp-action="Index" asp-route-estado="esperando">
+        <span class="value">@Count(OrderStatus.AwaitingApproval, OrderStatus.AwaitingParts)</span>
+        <span class="label"><span class="dot tone-yellow"></span>Esperando cliente o repuesto</span>
+    </a>
+    <a asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.InRepair">
+        <span class="value">@Count(OrderStatus.InRepair)</span>
+        <span class="label"><span class="dot tone-cyan"></span>En reparación</span>
+    </a>
+    <a asp-controller="Orders" asp-action="Index" asp-route-estado="por-retirar">
+        <span class="value">@Count(OrderStatus.Ready, OrderStatus.NotRepaired)</span>
+        <span class="label"><span class="dot tone-green"></span>Por retirar</span>
+    </a>
+</nav>
 
-@if (Model.Abandoned.Any())
+@if (attentionCount > 0)
 {
-    <div class="card border-warning mb-4">
-        <div class="card-header bg-warning-subtle">
-            Listas sin retirar hace más de @Model.AbandonedAfterDays días (@Model.Abandoned.Count)
+    <section class="panel attention mb-4" aria-labelledby="attention-title">
+        <div class="list-head">
+            <h2 id="attention-title">Necesitan atención <span class="count">@attentionCount</span></h2>
         </div>
-        <div class="list-group list-group-flush">
-            @foreach (var order in Model.Abandoned)
-            {
-                <partial name="_OrderItem" model="order" />
-            }
-        </div>
-    </div>
+
+        @foreach (var order in Model.Abandoned)
+        {
+            var customer = order.Printer?.Customer;
+            var days = Display.DaysSince(order.ReadyAt);
+            var reminder = customer != null ? WhatsApp.Link(customer, WhatsApp.PickupReminder(order, shop), shop) : "#";
+            <div class="alert-row">
+                <a class="row-link" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">
+                    <span class="order-number">@order.Number</span>
+                    <span class="min-w-0">
+                        <span class="primary-text d-block text-truncate">@customer?.Name</span>
+                        <span class="secondary-text d-block text-truncate">@order.Printer?.DisplayName</span>
+                    </span>
+                </a>
+                <span class="late">Sin retirar hace @days días</span>
+                <a class="btn btn-whatsapp btn-sm" href="@reminder" target="_blank" rel="noopener">Recordar por WhatsApp</a>
+            </div>
+        }
+
+        @foreach (var order in Model.Overdue)
+        {
+            var customer = order.Printer?.Customer;
+            var late = Display.Today.DayNumber - order.EstimatedDate!.Value.DayNumber;
+            <div class="alert-row">
+                <a class="row-link" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">
+                    <span class="order-number">@order.Number</span>
+                    <span class="min-w-0">
+                        <span class="primary-text d-block text-truncate">@customer?.Name</span>
+                        <span class="secondary-text d-block text-truncate">@order.Printer?.DisplayName</span>
+                    </span>
+                </a>
+                <span class="late">Atrasada @late @(late == 1 ? "día" : "días")</span>
+                <partial name="_StatusBadge" model="order.Status" />
+            </div>
+        }
+    </section>
 }
 
-@if (Model.Overdue.Any())
-{
-    <div class="card border-danger-subtle mb-4">
-        <div class="card-header bg-danger-subtle">
-            Atrasadas: ya pasó la fecha estimada (@Model.Overdue.Count)
-        </div>
-        <div class="list-group list-group-flush">
-            @foreach (var order in Model.Overdue)
-            {
-                <partial name="_OrderItem" model="order" />
-            }
-        </div>
-    </div>
-}
-
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Últimos ingresos</span>
-        <a class="small" asp-controller="Orders" asp-action="Index">Ver todas</a>
+<section class="panel" aria-labelledby="recent-title">
+    <div class="list-head">
+        <h2 id="recent-title">Últimos ingresos</h2>
+        <a class="small fw-semibold" asp-controller="Orders" asp-action="Index">Ver todas las órdenes</a>
     </div>
     @if (Model.Recent.Any())
     {
-        <div class="list-group list-group-flush">
-            @foreach (var order in Model.Recent)
-            {
-                <partial name="_OrderItem" model="order" />
-            }
-        </div>
+        @foreach (var order in Model.Recent)
+        {
+            <partial name="_OrderItem" model="order" />
+        }
     }
     else
     {
-        <div class="card-body text-center text-body-secondary py-5">
-            <p class="mb-3">Todavía no hay impresoras en el taller.</p>
-            <a class="btn btn-primary" asp-controller="Orders" asp-action="Create">Registrar el primer ingreso</a>
+        <div class="empty-state">
+            <p class="mb-3">No hay impresoras en el taller.</p>
+            <a class="btn btn-primary" asp-controller="Orders" asp-action="Create">Registrar un ingreso</a>
         </div>
     }
-</div>
+</section>

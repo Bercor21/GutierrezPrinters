@@ -9,17 +9,21 @@ estados y buscador. Funciona desde la computadora y desde el celular.
 - **Ingreso en una sola pantalla:** cliente, impresora y falla reportada. Si el teléfono ya
   existe, los datos del cliente y sus impresoras anteriores se cargan solos.
 - **Número de orden corto** (`#0042`) para decirlo por teléfono o escribirlo a mano.
-- **Etiqueta adhesiva con QR** para pegar en la impresora. Al escanearla con el celular se
-  abre la ficha completa de la orden.
-- **Boleta de ingreso** tamaño carta, con condiciones, firmas y un comprobante desprendible
-  para el cliente.
+- **Etiqueta adhesiva 4 × 6 con QR** para pegar en la impresora. Al escanearla con el celular
+  se abre la ficha completa de la orden.
+- **Boleta de ingreso** en papel tamaño carta: la copia del cliente, con las condiciones del
+  taller y las firmas.
 - **Estados:** recibida, en diagnóstico, esperando aprobación, esperando repuesto,
-  en reparación, lista, entregada y no reparada.
+  en reparación, lista, no se pudo reparar, entregada, entregada sin reparar y enviada a
+  reciclaje.
+- **Reglas del taller:** garantía de 6 meses que se pone sola al entregar, diagnóstico de
+  ₡7 000 que se cobra si la impresora no se repara.
 - **Avisos por WhatsApp** con el mensaje ya escrito según el estado, usando enlaces `wa.me`.
 - **Buscador único** por número de orden, cliente, teléfono (con o sin guion), marca,
   modelo o número de serie.
 - **Historial** de cada cliente y de cada impresora.
-- **Alertas** de equipos listos sin retirar después de 30 días y de órdenes atrasadas.
+- **Alertas** de órdenes atrasadas y de impresoras que llevan 30 días sin que las retiren,
+  con un recordatorio por WhatsApp y la opción de enviarlas a reciclaje.
 - **Respaldo en Excel** de órdenes, equipos y clientes.
 - **Inicio de sesión** obligatorio. No hay registro público.
 
@@ -77,10 +81,18 @@ esquema `taller`, y el usuario administrador. Entrá con el correo y la contrase
 
 En `appsettings.json`, sección `Shop`, se cambian sin tocar código:
 
-- nombre, teléfono y dirección del taller, que salen en la boleta y en los mensajes;
-- tamaño de la etiqueta en milímetros (por defecto 62 × 40);
-- días para la alerta de equipos sin retirar;
-- condiciones que salen al pie de la boleta.
+| Dato | Para qué sirve |
+| --- | --- |
+| `Name`, `Phone`, `Address` | Datos del taller en la boleta, la etiqueta y los mensajes. |
+| `PublicUrl` | La dirección del sistema en internet (cuando esté en Azure). El QR de la etiqueta la usa para abrir la orden desde el celular. |
+| `LabelWidthMm`, `LabelHeightMm` | Tamaño de la etiqueta. Por defecto 101.6 × 152.4 mm (4 × 6 pulgadas). |
+| `WarrantyDays` | Garantía que se pone sola al entregar (180 = 6 meses). |
+| `DiagnosisFee` | Lo que se cobra por el diagnóstico si no se repara (7000). |
+| `AbandonedAfterDays` | Días sin retirar antes de la alerta de reciclaje (30). |
+| `Terms` | Condiciones de la boleta. `{diagnostico}`, `{garantia}` y `{dias}` se cambian solos por los valores de arriba. |
+
+El logo está en `wwwroot/img`: `logo.jpg` (completo), `wordmark-white.png` (barra de arriba) y
+`wordmark-black.png` (etiqueta). La letra es Archivo (licencia OFL), en `wwwroot/lib/archivo`.
 
 ## Estructura
 

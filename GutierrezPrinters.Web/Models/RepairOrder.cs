@@ -41,7 +41,7 @@ public class RepairOrder
     // ---- Plata (colones) ----
     [Precision(12, 2)]
     [Range(0, 99999999, ErrorMessage = "Monto inválido.")]
-    [Display(Name = "Cotización (₡)")]
+    [Display(Name = "Costo de la reparación (₡)")]
     public decimal? Quote { get; set; }
 
     [Precision(12, 2)]
@@ -71,9 +71,29 @@ public class RepairOrder
     // ---- Calculados (no se guardan en la base de datos) ----
     public string Number => FormatNumber(Id);
 
-    public decimal? Balance => Quote.HasValue ? Quote.Value - Deposit : null;
+    // Cobro: el diagnóstico se cobra siempre. Si se repara, la reparación (Quote) se cobra aparte.
+    // Si no se pudo reparar, el cliente paga solo el diagnóstico.
+    public bool ChargesDiagnosisOnly => Status is OrderStatus.NotRepaired or OrderStatus.ReturnedUnrepaired;
 
-    public bool IsClosed => Status is OrderStatus.Delivered or OrderStatus.NotRepaired;
+    public decimal Total(decimal diagnosisFee) => diagnosisFee + (ChargesDiagnosisOnly ? 0 : Quote ?? 0);
+
+    // Lo que falta por pagar (total menos el adelanto).
+    public decimal AmountDue(decimal diagnosisFee) => Math.Max(0, Total(diagnosisFee) - Deposit);
+
+    // ¿Ya se sabe cuánto va a pagar? (si se va a reparar, hace falta la cotización)
+    public bool HasFinalPrice => ChargesDiagnosisOnly || Quote.HasValue;
+
+    // Ya salió del taller (entregada o reciclada): no cuenta como pendiente.
+    public bool IsClosed => IsClosedStatus(Status);
+
+    // Terminó el trabajo y la impresora espera a que el cliente la retire.
+    public bool IsAwaitingPickup => IsAwaitingPickupStatus(Status);
+
+    public static bool IsClosedStatus(OrderStatus status) =>
+        status is OrderStatus.Delivered or OrderStatus.ReturnedUnrepaired or OrderStatus.Recycled;
+
+    public static bool IsAwaitingPickupStatus(OrderStatus status) =>
+        status is OrderStatus.Ready or OrderStatus.NotRepaired;
 
     public DateTime? WarrantyUntil =>
         DeliveredAt.HasValue && WarrantyDays is > 0 ? DeliveredAt.Value.AddDays(WarrantyDays.Value) : null;
