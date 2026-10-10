@@ -1,0 +1,29 @@
+@model RepairOrder
+@{
+    var customer = Model.Printer?.Customer;
+}
+<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="list-group-item list-group-item-action order-item">
+    <div class="d-flex justify-content-between align-items-start gap-2">
+        <div class="min-w-0">
+            <div class="fw-semibold text-truncate">
+                <span class="order-number">@Model.Number</span>
+                <span class="mx-1 text-body-tertiary">·</span>@customer?.Name
+            </div>
+            <div class="order-meta text-truncate">
+                @Model.Printer?.DisplayName
+                @if (!string.IsNullOrEmpty(Model.Printer?.SerialNumber))
+                {
+                    <span>· S/N @Model.Printer.SerialNumber</span>
+                }
+                @if (customer != null)
+                {
+                    <span>· @customer.Phone</span>
+                }
+            </div>
+        </div>
+        <div class="text-end flex-shrink-0">
+            <partial name="_StatusBadge" model="Model.Status" />
+            <div class="order-meta mt-1">@Display.Date(Model.ReceivedAt)</div>
+        </div>
+    </div>
+</a>

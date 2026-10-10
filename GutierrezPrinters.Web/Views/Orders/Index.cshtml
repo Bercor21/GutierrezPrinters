@@ -1,0 +1,75 @@
+@model OrderListViewModel
+@{
+    ViewData["Title"] = "Órdenes";
+    var filters = new List<(string Value, string Text)>
+    {
+        ("activas", "En el taller"),
+        ("todas", "Todas"),
+        ("por-diagnosticar", "Por diagnosticar"),
+        ("esperando", "Esperando cliente o repuesto"),
+    };
+    foreach (var status in Enum.GetValues<OrderStatus>())
+    {
+        filters.Add((status.ToString(), status.Name()));
+    }
+    filters.Add(("cerradas", "Cerradas (entregadas o no reparadas)"));
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="page-title">Órdenes</h1>
+    <a class="btn btn-outline-secondary" asp-action="Export">Descargar Excel</a>
+</div>
+
+<form asp-action="Index" method="get" class="card card-body mb-3 search-box" role="search">
+    <div class="row g-2">
+        <div class="col-12 col-md">
+            <input type="search" name="q" value="@Model.Query" class="form-control"
+                   placeholder="Orden, cliente, teléfono, modelo o serie" aria-label="Buscar" autocomplete="off" />
+        </div>
+        <div class="col-8 col-md-4">
+            <select name="estado" class="form-select" aria-label="Estado">
+                @foreach (var f in filters)
+                {
+                    <option value="@f.Value" selected="@(f.Value == Model.Filter)">@f.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-4 col-md-auto d-grid">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </div>
+</form>
+
+<p class="small text-body-secondary mb-2">
+    @if (Model.TotalFound == 0)
+    {
+        <span>No se encontraron órdenes.</span>
+    }
+    else if (Model.TotalFound > Model.Orders.Count)
+    {
+        <span>Mostrando las @Model.Orders.Count más recientes de @Model.TotalFound órdenes. Afiná la búsqueda para ver otras.</span>
+    }
+    else
+    {
+        <span>@Model.TotalFound @(Model.TotalFound == 1 ? "orden" : "órdenes")</span>
+    }
+</p>
+
+@if (Model.Orders.Any())
+{
+    <div class="card">
+        <div class="list-group list-group-flush">
+            @foreach (var order in Model.Orders)
+            {
+                <partial name="_OrderItem" model="order" />
+            }
+        </div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(Model.Query))
+{
+    <div class="card card-body text-center py-4">
+        <p class="mb-3">No hay órdenes que coincidan con "<strong>@Model.Query</strong>".</p>
+        <div><a class="btn btn-primary" asp-action="Create">Registrar un ingreso nuevo</a></div>
+    </div>
+}

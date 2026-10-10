@@ -1,0 +1,149 @@
+@model RepairOrder
+@inject IOptions<ShopOptions> ShopSettings
+@{
+    Layout = null;
+    var shop = ShopSettings.Value;
+    var printer = Model.Printer!;
+    var customer = printer.Customer!;
+    var orderUrl = Url.Action("Details", "Orders", new { id = Model.Id }, Context.Request.Scheme);
+
+    // Si un campo está vacío, se dejan líneas para escribir a mano.
+    string Value(string? text) => string.IsNullOrWhiteSpace(text) ? "" : text;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hoja de ingreso @Model.Number</title>
+    <style>
+        @@page { size: letter; margin: 11mm 12mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 10pt; background: #e9edf2; }
+        .page { width: 216mm; min-height: 279mm; margin: 16px auto; padding: 11mm 12mm; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+        header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #13263f; padding-bottom: 2.5mm; margin-bottom: 2mm; }
+        .shop-name { font-size: 17pt; font-weight: 800; color: #13263f; }
+        .shop-data { font-size: 8.5pt; color: #444; margin-top: 1mm; }
+        .doc-title { font-size: 9pt; text-transform: uppercase; letter-spacing: .08em; color: #555; text-align: right; }
+        .order-no { font-size: 22pt; font-weight: 800; text-align: right; line-height: 1.1; }
+        .head-right { display: flex; gap: 4mm; align-items: center; }
+        .qr { width: 24mm; height: 24mm; }
+        .qr svg { width: 100%; height: 100%; display: block; }
+        h2 { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .08em; color: #13263f; margin: 3mm 0 1.2mm; border-bottom: 1px solid #c9d2de; padding-bottom: .8mm; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2mm 8mm; }
+        .field { display: flex; gap: 2mm; min-height: 5.5mm; border-bottom: 1px dotted #b8c2cf; padding: .6mm 0; }
+        .field b { white-space: nowrap; font-weight: 600; color: #333; }
+        .block { border: 1px solid #c9d2de; border-radius: 2mm; padding: 1.5mm 3mm; min-height: 11mm; white-space: pre-line; }
+        .block.tall { min-height: 17mm; }
+        .money { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+        .money .box { border: 1px solid #c9d2de; border-radius: 2mm; padding: 2mm 3mm; }
+        .money .box span { display: block; font-size: 8pt; color: #555; }
+        .money .box strong { font-size: 12pt; }
+        .terms { font-size: 8pt; color: #333; margin: 1mm 0 0; padding-left: 4.5mm; }
+        .terms li { margin-bottom: .6mm; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; margin-top: 11mm; break-inside: avoid; }
+        .signatures div { border-top: 1px solid #333; text-align: center; padding-top: 1.5mm; font-size: 9pt; }
+        .stub { break-inside: avoid; margin-top: 6mm; border-top: 1.5px dashed #777; padding-top: 4mm; display: flex; justify-content: space-between; align-items: center; gap: 6mm; }
+        .stub .big { font-size: 16pt; font-weight: 800; }
+        .stub small { color: #444; }
+        .toolbar { text-align: center; font-family: system-ui, sans-serif; padding: 6px 12px 24px; }
+        .toolbar button { font-size: 16px; padding: 8px 22px; border-radius: 8px; border: 0; background: #1f4e8c; color: #fff; cursor: pointer; }
+        @@media print {
+            body { background: #fff; }
+            .page { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            .toolbar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar"><button type="button" onclick="window.print()">Imprimir hoja</button></div>
+
+    <div class="page">
+        <header>
+            <div>
+                <div class="shop-name">@shop.Name</div>
+                <div class="shop-data">
+                    Reparación de impresoras
+                    @if (!string.IsNullOrWhiteSpace(shop.Phone)) { <span> · Tel. @shop.Phone</span> }
+                    @if (!string.IsNullOrWhiteSpace(shop.Address)) { <br /><span>@shop.Address</span> }
+                </div>
+            </div>
+            <div class="head-right">
+                <div>
+                    <div class="doc-title">Boleta de ingreso</div>
+                    <div class="order-no">@Model.Number</div>
+                    <div class="doc-title">@Display.DateTimeShort(Model.ReceivedAt)</div>
+                </div>
+                <div class="qr" data-qr="@orderUrl"></div>
+            </div>
+        </header>
+
+        <h2>Cliente</h2>
+        <div class="grid">
+            <div class="field"><b>Nombre:</b> <span>@customer.Name</span></div>
+            <div class="field"><b>Teléfono:</b> <span>@customer.Phone</span></div>
+            <div class="field"><b>Correo:</b> <span>@Value(customer.Email)</span></div>
+            <div class="field"><b>Cédula:</b> <span>@Value(customer.IdNumber)</span></div>
+        </div>
+
+        <h2>Equipo</h2>
+        <div class="grid">
+            <div class="field"><b>Marca y modelo:</b> <span>@printer.DisplayName</span></div>
+            <div class="field"><b>N.º de serie:</b> <span>@Value(printer.SerialNumber)</span></div>
+            <div class="field"><b>Tecnología:</b> <span>@printer.Technology.Name()</span></div>
+            <div class="field"><b>Tipo:</b> <span>@printer.Category.Name()@(printer.IsMultifunction ? " · multifuncional" : "")@(printer.IsColor ? " · color" : "")</span></div>
+        </div>
+
+        <h2>Cómo se recibe</h2>
+        <div class="field"><b>Accesorios:</b> <span>@Value(Model.Accessories)</span></div>
+        <div class="field"><b>Estado físico:</b> <span>@Value(Model.PhysicalCondition)</span></div>
+
+        <h2>Falla reportada por el cliente</h2>
+        <div class="block">@Model.ReportedIssue</div>
+
+        <h2>Diagnóstico del técnico</h2>
+        <div class="block tall">@Value(Model.Diagnosis)</div>
+
+        <h2>Pendientes / repuestos</h2>
+        <div class="block">@Value(Model.PendingWork)</div>
+
+        <h2>Cobro y fechas</h2>
+        <div class="money">
+            <div class="box"><span>Cotización</span><strong>@(Model.Quote.HasValue ? Display.Money(Model.Quote) : "₡")</strong></div>
+            <div class="box"><span>Adelanto</span><strong>@Display.Money(Model.Deposit)</strong></div>
+            <div class="box"><span>Saldo</span><strong>@(Model.Balance.HasValue ? Display.Money(Model.Balance) : "₡")</strong></div>
+        </div>
+        <div class="grid" style="margin-top:2mm">
+            <div class="field"><b>Fecha estimada:</b> <span>@(Model.EstimatedDate.HasValue ? Display.Date(Model.EstimatedDate) : "")</span></div>
+            <div class="field"><b>Garantía:</b> <span>@(Model.WarrantyDays is > 0 ? $"{Model.WarrantyDays} días" : "")</span></div>
+        </div>
+
+        @if (shop.Terms.Any())
+        {
+            <h2>Condiciones</h2>
+            <ol class="terms">
+                @foreach (var term in shop.Terms)
+                {
+                    <li>@term</li>
+                }
+            </ol>
+        }
+
+        <div class="signatures">
+            <div>Firma del cliente</div>
+            <div>Recibido por (@shop.Name)</div>
+        </div>
+
+        <div class="stub">
+            <div>
+                <small>Comprobante para el cliente · @shop.Name@(string.IsNullOrWhiteSpace(shop.Phone) ? "" : " · Tel. " + shop.Phone)</small>
+                <div class="big">Orden @Model.Number</div>
+                <small>@printer.DisplayName · Ingreso @Display.Date(Model.ReceivedAt) · Presente este comprobante para retirar su equipo.</small>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/qrcode-generator/qrcode.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

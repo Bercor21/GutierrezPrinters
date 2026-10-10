@@ -1,0 +1,14 @@
+{
+  "name": "Gutierrez Printers",
+  "short_name": "Taller GP",
+  "description": "Control de reparaciones de impresoras",
+  "lang": "es-CR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f8",
+  "theme_color": "#13263f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

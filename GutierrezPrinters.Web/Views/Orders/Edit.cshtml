@@ -1,0 +1,87 @@
+@model OrderEditViewModel
+@{
+    var order = Model.Order!;
+    ViewData["Title"] = $"Editar orden {order.Number}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="mb-3">
+            <h1 class="page-title">Editar orden <span class="order-number">@order.Number</span></h1>
+            <div class="text-body-secondary">@order.Printer?.Customer?.Name · @order.Printer?.DisplayName</div>
+        </div>
+
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="card form-section">
+                <div class="card-header">Trabajo del taller</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Diagnosis" class="form-label"></label>
+                        <textarea asp-for="Diagnosis" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div>
+                        <label asp-for="PendingWork" class="form-label"></label>
+                        <textarea asp-for="PendingWork" class="form-control" rows="2" placeholder="Repuestos que faltan, cosas por cambiar..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card form-section">
+                <div class="card-header">Cobro, fecha y garantía</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <label asp-for="Quote" class="form-label"></label>
+                            <input asp-for="Quote" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <span asp-validation-for="Quote" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label asp-for="Deposit" class="form-label"></label>
+                            <input asp-for="Deposit" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <span asp-validation-for="Deposit" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label asp-for="EstimatedDate" class="form-label"></label>
+                            <input asp-for="EstimatedDate" type="date" class="form-control" />
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label asp-for="WarrantyDays" class="form-label"></label>
+                            <input asp-for="WarrantyDays" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <span asp-validation-for="WarrantyDays" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card form-section">
+                <div class="card-header">Datos del ingreso</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="ReportedIssue" class="form-label"></label>
+                        <textarea asp-for="ReportedIssue" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="ReportedIssue" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Accessories" class="form-label"></label>
+                        <input asp-for="Accessories" class="form-control" />
+                    </div>
+                    <div>
+                        <label asp-for="PhysicalCondition" class="form-label"></label>
+                        <textarea asp-for="PhysicalCondition" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-3">
+                <a class="btn btn-outline-secondary btn-lg" asp-action="Details" asp-route-id="@Model.Id">Cancelar</a>
+                <button type="submit" class="btn btn-primary btn-lg px-5">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
