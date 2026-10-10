@@ -11,6 +11,12 @@ namespace GutierrezPrinters.Web.Controllers
             return View();
         }
 
+        public IActionResult Order(int id)
+        {
+            return Content ("Orden #" + id);
+        }
+
+
         public IActionResult Privacy()
         {
             return View();
