@@ -48,7 +48,8 @@
                         </div>
                         <div class="col-6 col-md-3">
                             <label asp-for="WarrantyDays" class="form-label"></label>
-                            <input asp-for="WarrantyDays" type="number" min="0" step="1" inputmode="numeric" class="form-control" />
+                            <input asp-for="WarrantyDays" type="number" min="0" step="1" inputmode="numeric" class="form-control" placeholder="180" />
+                            <div class="form-text">180 días = 6 meses. Vacío: se ponen 6 meses al entregar.</div>
                             <span asp-validation-for="WarrantyDays" class="text-danger small"></span>
                         </div>
                     </div>

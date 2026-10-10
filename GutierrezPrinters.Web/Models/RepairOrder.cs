@@ -73,7 +73,24 @@ public class RepairOrder
 
     public decimal? Balance => Quote.HasValue ? Quote.Value - Deposit : null;
 
-    public bool IsClosed => Status is OrderStatus.Delivered or OrderStatus.NotRepaired;
+    // Si no se reparó, el cliente paga solo el diagnóstico (menos el adelanto).
+    // Si se reparó, el diagnóstico va incluido en la cotización.
+    public bool ChargesDiagnosisOnly => Status is OrderStatus.NotRepaired or OrderStatus.ReturnedUnrepaired;
+
+    public decimal? AmountDue(decimal diagnosisFee) =>
+        ChargesDiagnosisOnly ? Math.Max(0, diagnosisFee - Deposit) : Balance;
+
+    // Ya salió del taller (entregada o reciclada): no cuenta como pendiente.
+    public bool IsClosed => IsClosedStatus(Status);
+
+    // Terminó el trabajo y la impresora espera a que el cliente la retire.
+    public bool IsAwaitingPickup => IsAwaitingPickupStatus(Status);
+
+    public static bool IsClosedStatus(OrderStatus status) =>
+        status is OrderStatus.Delivered or OrderStatus.ReturnedUnrepaired or OrderStatus.Recycled;
+
+    public static bool IsAwaitingPickupStatus(OrderStatus status) =>
+        status is OrderStatus.Ready or OrderStatus.NotRepaired;
 
     public DateTime? WarrantyUntil =>
         DeliveredAt.HasValue && WarrantyDays is > 0 ? DeliveredAt.Value.AddDays(WarrantyDays.Value) : null;

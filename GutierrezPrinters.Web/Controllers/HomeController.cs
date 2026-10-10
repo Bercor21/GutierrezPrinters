@@ -27,10 +27,13 @@ public class HomeController : Controller
         var abandonedLimit = DateTime.UtcNow.AddDays(-_shop.AbandonedAfterDays);
         var today = Display.Today;
 
+        // Todo lo que sigue físicamente en el taller (no entregadas ni recicladas).
         var openOrders = await _db.RepairOrders
             .AsNoTracking()
             .Include(o => o.Printer).ThenInclude(p => p!.Customer)
-            .Where(o => o.Status != OrderStatus.Delivered && o.Status != OrderStatus.NotRepaired)
+            .Where(o => o.Status != OrderStatus.Delivered &&
+                        o.Status != OrderStatus.ReturnedUnrepaired &&
+                        o.Status != OrderStatus.Recycled)
             .OrderByDescending(o => o.Id)
             .ToListAsync();
 
@@ -38,12 +41,14 @@ public class HomeController : Controller
         {
             OpenCount = openOrders.Count,
             CountByStatus = openOrders.GroupBy(o => o.Status).ToDictionary(g => g.Key, g => g.Count()),
+            // Listas (o no reparables) que nadie ha venido a retirar.
             Abandoned = openOrders
-                .Where(o => o.Status == OrderStatus.Ready && o.ReadyAt.HasValue && o.ReadyAt.Value < abandonedLimit)
+                .Where(o => o.IsAwaitingPickup && o.ReadyAt.HasValue && o.ReadyAt.Value < abandonedLimit)
                 .OrderBy(o => o.ReadyAt)
                 .ToList(),
+            // Todavía en trabajo y ya pasó la fecha que se le dijo al cliente.
             Overdue = openOrders
-                .Where(o => o.Status != OrderStatus.Ready && o.EstimatedDate.HasValue && o.EstimatedDate.Value < today)
+                .Where(o => !o.IsAwaitingPickup && o.EstimatedDate.HasValue && o.EstimatedDate.Value < today)
                 .OrderBy(o => o.EstimatedDate)
                 .ToList(),
             Recent = openOrders.Take(8).ToList(),

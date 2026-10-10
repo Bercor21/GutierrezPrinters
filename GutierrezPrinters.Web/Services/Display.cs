@@ -56,19 +56,37 @@ public static class Display
         return attribute?.GetName() ?? value.ToString();
     }
 
-    // Color de Bootstrap para cada estado.
-    public static string BadgeClass(OrderStatus status) => status switch
+    // Color de cada estado (ver site.css): cian = se está trabajando, amarillo = esperando a alguien,
+    // verde = lista, magenta = ojo, gris = recién recibida o ya cerrada.
+    public static string StatusTone(OrderStatus status) => status switch
     {
-        OrderStatus.Received => "text-bg-secondary",
-        OrderStatus.Diagnosis => "text-bg-info",
-        OrderStatus.AwaitingApproval => "text-bg-warning",
-        OrderStatus.AwaitingParts => "text-bg-warning",
-        OrderStatus.InRepair => "text-bg-primary",
-        OrderStatus.Ready => "text-bg-success",
-        OrderStatus.Delivered => "text-bg-dark",
-        OrderStatus.NotRepaired => "text-bg-danger",
-        _ => "text-bg-secondary"
+        OrderStatus.Diagnosis or OrderStatus.InRepair => "tone-cyan",
+        OrderStatus.AwaitingApproval or OrderStatus.AwaitingParts => "tone-yellow",
+        OrderStatus.Ready => "tone-green",
+        OrderStatus.NotRepaired => "tone-magenta",
+        OrderStatus.Delivered or OrderStatus.ReturnedUnrepaired or OrderStatus.Recycled => "tone-closed",
+        _ => "tone-neutral"
     };
+
+    // 180 -> "6 meses", 45 -> "45 días".
+    public static string Warranty(int? days)
+    {
+        if (days is not > 0)
+        {
+            return "Sin garantía";
+        }
+
+        return days.Value % 30 == 0
+            ? (days.Value == 30 ? "1 mes" : $"{days.Value / 30} meses")
+            : (days.Value == 1 ? "1 día" : $"{days.Value} días");
+    }
+
+    // Números para CSS (siempre con punto decimal, sin importar el idioma).
+    public static string Css(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    // Cuántos días han pasado desde una fecha (en hora de Costa Rica).
+    public static int DaysSince(DateTime? utc) =>
+        utc.HasValue ? Today.DayNumber - DateOnly.FromDateTime(ToLocal(utc.Value)).DayNumber : 0;
 
     // Solo los números de un teléfono: "8888-8888" -> "88888888".
     public static string Digits(string? text) => new((text ?? "").Where(char.IsDigit).ToArray());

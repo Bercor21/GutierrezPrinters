@@ -1,29 +1,24 @@
 @model RepairOrder
 @{
     var customer = Model.Printer?.Customer;
+    var serial = Model.Printer?.SerialNumber;
 }
-<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="list-group-item list-group-item-action order-item">
-    <div class="d-flex justify-content-between align-items-start gap-2">
-        <div class="min-w-0">
-            <div class="fw-semibold text-truncate">
-                <span class="order-number">@Model.Number</span>
-                <span class="mx-1 text-body-tertiary">·</span>@customer?.Name
-            </div>
-            <div class="order-meta text-truncate">
-                @Model.Printer?.DisplayName
-                @if (!string.IsNullOrEmpty(Model.Printer?.SerialNumber))
-                {
-                    <span>· S/N @Model.Printer.SerialNumber</span>
-                }
-                @if (customer != null)
-                {
-                    <span>· @customer.Phone</span>
-                }
-            </div>
-        </div>
-        <div class="text-end flex-shrink-0">
-            <partial name="_StatusBadge" model="Model.Status" />
-            <div class="order-meta mt-1">@Display.Date(Model.ReceivedAt)</div>
-        </div>
-    </div>
+<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="order-row">
+    <span class="order-number">@Model.Number</span>
+    <span class="who">
+        <span class="primary-text d-block">@customer?.Name</span>
+        <span class="secondary-text d-block">@customer?.Phone</span>
+    </span>
+    <span class="what">
+        <span class="primary-text d-none d-lg-block">@Model.Printer?.DisplayName</span>
+        <span class="secondary-text d-block">
+            <span class="d-lg-none">@Model.Printer?.DisplayName</span>
+            @if (!string.IsNullOrEmpty(serial))
+            {
+                <span class="d-none d-lg-inline">Serie @serial</span>
+            }
+        </span>
+    </span>
+    <span class="state"><partial name="_StatusBadge" model="Model.Status" /></span>
+    <span class="when">@Display.Date(Model.ReceivedAt)</span>
 </a>

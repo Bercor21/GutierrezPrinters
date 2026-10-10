@@ -1,64 +1,83 @@
+@inject IOptions<ShopOptions> ShopSettings
 @{
+    var shop = ShopSettings.Value;
     var signedIn = User.Identity?.IsAuthenticated == true;
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
-    string Active(string name) => string.Equals(controller, name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    bool Is(string name) => string.Equals(controller, name, StringComparison.OrdinalIgnoreCase);
+    var isCreate = Is("Orders") && string.Equals(action, "Create", StringComparison.OrdinalIgnoreCase);
+    string Active(bool on) => on ? "active" : "";
 }
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Gutierrez Printers</title>
-    <meta name="theme-color" content="#13263f" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>@ViewData["Title"] - @shop.Name</title>
+    <meta name="theme-color" content="#1a1f29" />
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="icon" href="~/favicon.ico" />
     <link rel="apple-touch-icon" href="~/icons/icon-192.png" />
+    <link rel="preload" href="~/lib/archivo/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin />
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
+<body class="@(signedIn ? "has-tabbar" : "")">
     @if (signedIn)
     {
-        <nav class="navbar navbar-expand-md navbar-dark app-nav sticky-top">
-            <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">GP</span>Gutierrez Printers</a>
-                <a class="btn btn-warning btn-sm fw-semibold d-md-none ms-auto me-2" asp-controller="Orders" asp-action="Create">+ Ingreso</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                        aria-controls="mainNav" aria-expanded="false" aria-label="Abrir menú">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="mainNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item"><a class="nav-link @Active("Home")" asp-controller="Home" asp-action="Index">Inicio</a></li>
-                        <li class="nav-item"><a class="nav-link @Active("Orders")" asp-controller="Orders" asp-action="Index">Órdenes</a></li>
-                        <li class="nav-item"><a class="nav-link @Active("Customers")" asp-controller="Customers" asp-action="Index">Clientes</a></li>
-                    </ul>
-                    <a class="btn btn-warning btn-sm fw-semibold d-none d-md-inline-block me-3" asp-controller="Orders" asp-action="Create">+ Nuevo ingreso</a>
-                    <ul class="navbar-nav">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">@User.Identity?.Name</a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" asp-controller="Orders" asp-action="Export">Descargar respaldo (Excel)</a></li>
-                                <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Cambiar contraseña</a></li>
-                                <li><hr class="dropdown-divider" /></li>
-                                <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post">
-                                        <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                                    </form>
-                                </li>
-                            </ul>
+        <header class="app-nav">
+            <div class="container nav-inner">
+                <a class="brand" asp-controller="Home" asp-action="Index">
+                    <img class="brand-wordmark" src="~/img/wordmark-white.png" alt="@shop.Name, inicio" width="800" height="73" />
+                </a>
+                <ul class="app-links" aria-label="Secciones">
+                    <li><a class="@Active(Is("Home"))" asp-controller="Home" asp-action="Index">Inicio</a></li>
+                    <li><a class="@Active(Is("Orders") && !isCreate)" asp-controller="Orders" asp-action="Index">Órdenes</a></li>
+                    <li><a class="@Active(Is("Customers") || Is("Printers"))" asp-controller="Customers" asp-action="Index">Clientes</a></li>
+                </ul>
+                <a class="btn btn-intake nav-intake" asp-controller="Orders" asp-action="Create">+ Nuevo ingreso</a>
+                <div class="dropdown user-menu">
+                    <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">@User.Identity?.Name</a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" asp-controller="Orders" asp-action="Export">Descargar respaldo en Excel</a></li>
+                        <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Cambiar contraseña</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                            </form>
                         </li>
                     </ul>
                 </div>
             </div>
+        </header>
+
+        @* En el celular: barra de abajo, a mano del dedo. *@
+        <nav class="tabbar" aria-label="Secciones">
+            <a class="@Active(Is("Home"))" asp-controller="Home" asp-action="Index">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M10 21v-6h4v6" /></svg>
+                Inicio
+            </a>
+            <a class="@Active(Is("Orders") && !isCreate)" asp-controller="Orders" asp-action="Index">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="1.5" /><path d="M7 14h10v7H7z" /></svg>
+                Órdenes
+            </a>
+            <a class="tab-intake @Active(isCreate)" asp-controller="Orders" asp-action="Create">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                Ingreso
+            </a>
+            <a class="@Active(Is("Customers") || Is("Printers"))" asp-controller="Customers" asp-action="Index">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                Clientes
+            </a>
         </nav>
     }
 
     <main class="container py-3 py-md-4">
         @if (TempData["Message"] is string message)
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="alert alert-success alert-dismissible fade show" role="status">
                 @message
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
@@ -66,8 +85,8 @@
         @RenderBody()
     </main>
 
-    <footer class="app-footer">
-        <div class="container">&copy; @DateTime.Now.Year Gutierrez Printers · Sistema de control de reparaciones</div>
+    <footer class="app-footer d-none d-md-block">
+        <div class="container">@shop.Name. Control de reparaciones.</div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

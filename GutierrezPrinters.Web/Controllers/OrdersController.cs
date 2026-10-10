@@ -4,6 +4,7 @@ using GutierrezPrinters.Web.Services;
 using GutierrezPrinters.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace GutierrezPrinters.Web.Controllers;
 
@@ -11,10 +12,12 @@ namespace GutierrezPrinters.Web.Controllers;
 public class OrdersController : Controller
 {
     private readonly AppDbContext _db;
+    private readonly ShopOptions _shop;
 
-    public OrdersController(AppDbContext db)
+    public OrdersController(AppDbContext db, IOptions<ShopOptions> shop)
     {
         _db = db;
+        _shop = shop.Value;
     }
 
     // ---------- Lista + buscador ----------
@@ -31,11 +34,20 @@ public class OrdersController : Controller
 
         if (filter == "activas")
         {
-            query = query.Where(o => o.Status != OrderStatus.Delivered && o.Status != OrderStatus.NotRepaired);
+            // Todo lo que sigue físicamente en el taller.
+            query = query.Where(o => o.Status != OrderStatus.Delivered &&
+                                     o.Status != OrderStatus.ReturnedUnrepaired &&
+                                     o.Status != OrderStatus.Recycled);
         }
         else if (filter == "cerradas")
         {
-            query = query.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.NotRepaired);
+            query = query.Where(o => o.Status == OrderStatus.Delivered ||
+                                     o.Status == OrderStatus.ReturnedUnrepaired ||
+                                     o.Status == OrderStatus.Recycled);
+        }
+        else if (filter == "por-retirar")
+        {
+            query = query.Where(o => o.Status == OrderStatus.Ready || o.Status == OrderStatus.NotRepaired);
         }
         else if (filter == "por-diagnosticar")
         {
@@ -252,16 +264,28 @@ public class OrdersController : Controller
         }
 
         var now = DateTime.UtcNow;
-        if (status == OrderStatus.Ready && order.Status != OrderStatus.Ready)
+
+        // "Lista desde": cuándo quedó esperando a que la retiren (reparada o no).
+        if (RepairOrder.IsAwaitingPickupStatus(status))
         {
-            order.ReadyAt = now;
+            order.ReadyAt ??= now;
         }
-        else if (status != OrderStatus.Ready && status != OrderStatus.Delivered)
+        else if (!RepairOrder.IsClosedStatus(status))
         {
-            order.ReadyAt = null;
+            order.ReadyAt = null; // volvió a trabajo
         }
 
-        order.DeliveredAt = status == OrderStatus.Delivered ? order.DeliveredAt ?? now : null;
+        // Fecha de entrega: solo si el cliente se la llevó.
+        order.DeliveredAt = status is OrderStatus.Delivered or OrderStatus.ReturnedUnrepaired
+            ? order.DeliveredAt ?? now
+            : null;
+
+        // Garantía: se pone sola al entregar una reparada (si no la habían escrito a mano).
+        if (status == OrderStatus.Delivered && order.WarrantyDays == null && _shop.WarrantyDays > 0)
+        {
+            order.WarrantyDays = _shop.WarrantyDays;
+        }
+
         order.Status = status;
         order.UpdatedAt = now;
         await _db.SaveChangesAsync();
@@ -330,14 +354,14 @@ public class OrdersController : Controller
     }
 
     // ---------- Para imprimir ----------
-    // Etiqueta pequeña con QR para pegar en la impresora.
+    // Etiqueta adhesiva 4 × 6 con QR para pegar en la impresora.
     public async Task<IActionResult> Label(int id)
     {
         var order = await LoadOrder(id);
         return order == null ? NotFound() : View(order);
     }
 
-    // Hoja grande de ingreso con todos los datos y firmas.
+    // Boleta de ingreso en papel normal: la copia que se lleva el cliente.
     public async Task<IActionResult> Sheet(int id)
     {
         var order = await LoadOrder(id);

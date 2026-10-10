@@ -5,161 +5,250 @@
     var printer = Model.Printer!;
     var customer = printer.Customer!;
     ViewData["Title"] = $"Orden {Model.Number}";
+    var tone = Display.StatusTone(Model.Status);
     var whatsapp = WhatsApp.Link(customer, WhatsApp.OrderMessage(Model, shop), shop);
     var suggestWhatsApp = TempData["SuggestWhatsApp"] is true;
     var statuses = Enum.GetValues<OrderStatus>();
-    var warranty = Model.WarrantyDays is > 0
-        ? $"{Model.WarrantyDays} días" + (Model.WarrantyUntil.HasValue ? $" (hasta {Display.Date(Model.WarrantyUntil)})" : "")
-        : "—";
+    var due = Model.AmountDue(shop.DiagnosisFee);
+
+    // Lleva demasiado tiempo esperando a que la retiren.
+    var daysWaiting = Display.DaysSince(Model.ReadyAt);
+    var abandoned = Model.IsAwaitingPickup && Model.ReadyAt.HasValue && daysWaiting >= shop.AbandonedAfterDays;
+
+    // Avance: los pasos dependen de si se reparó o no.
+    var steps = Model.Status switch
+    {
+        OrderStatus.NotRepaired or OrderStatus.ReturnedUnrepaired => new List<(string Label, OrderStatus[] On)>
+        {
+            ("Recibida", new[] { OrderStatus.Received }),
+            ("Diagnóstico", new[] { OrderStatus.Diagnosis }),
+            ("No se pudo reparar", new[] { OrderStatus.NotRepaired }),
+            ("Entregada sin reparar", new[] { OrderStatus.ReturnedUnrepaired })
+        },
+        OrderStatus.Recycled => new List<(string Label, OrderStatus[] On)>
+        {
+            ("Recibida", new[] { OrderStatus.Received }),
+            ("Trabajo del taller", new[] { OrderStatus.Diagnosis }),
+            ("Lista, sin retirar", new[] { OrderStatus.Ready }),
+            ("Enviada a reciclaje", new[] { OrderStatus.Recycled })
+        },
+        _ => new List<(string Label, OrderStatus[] On)>
+        {
+            ("Recibida", new[] { OrderStatus.Received }),
+            ("Diagnóstico", new[] { OrderStatus.Diagnosis }),
+            ("Aprobación o repuesto", new[] { OrderStatus.AwaitingApproval, OrderStatus.AwaitingParts }),
+            ("Reparación", new[] { OrderStatus.InRepair }),
+            ("Lista", new[] { OrderStatus.Ready }),
+            ("Entregada", new[] { OrderStatus.Delivered })
+        }
+    };
+    var current = steps.FindIndex(s => s.On.Contains(Model.Status));
+
+    string warranty;
+    if (Model.Status == OrderStatus.Delivered)
+    {
+        warranty = Display.Warranty(Model.WarrantyDays) +
+                   (Model.WarrantyUntil.HasValue ? $", hasta el {Display.Date(Model.WarrantyUntil)}" : "");
+    }
+    else if (Model.ChargesDiagnosisOnly || Model.Status == OrderStatus.Recycled)
+    {
+        warranty = "Sin garantía";
+    }
+    else
+    {
+        warranty = Display.Warranty(Model.WarrantyDays ?? shop.WarrantyDays) + " desde la entrega";
+    }
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="order-number-lg">@Model.Number</span>
+@* ---------- Encabezado: como la etiqueta ---------- *@
+<section class="ticket @tone mb-3" aria-label="Orden @Model.Number">
+    <div class="min-w-0">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
             <partial name="_StatusBadge" model="Model.Status" />
+            <span class="meta">Ingresó el @Display.DateTimeShort(Model.ReceivedAt)</span>
         </div>
-        <div class="fw-semibold">@customer.Name · @printer.DisplayName</div>
-        <div class="small text-body-secondary">Ingresó el @Display.DateTimeShort(Model.ReceivedAt)</div>
+        <span class="order-number-xl">@Model.Number</span>
+        <div class="who text-break">@customer.Name</div>
+        <div class="meta text-break">@printer.DisplayName@(string.IsNullOrEmpty(printer.SerialNumber) ? "" : ", serie " + printer.SerialNumber)</div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-primary" asp-action="Label" asp-route-id="@Model.Id" target="_blank">Etiqueta</a>
-        <a class="btn btn-outline-primary" asp-action="Sheet" asp-route-id="@Model.Id" target="_blank">Hoja de ingreso</a>
+    <div class="ticket-actions">
+        <a class="btn btn-outline-secondary" asp-action="Label" asp-route-id="@Model.Id" target="_blank">Imprimir etiqueta</a>
+        <a class="btn btn-outline-secondary" asp-action="Sheet" asp-route-id="@Model.Id" target="_blank">Imprimir boleta</a>
         <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
         <a class="btn btn-whatsapp" href="@whatsapp" target="_blank" rel="noopener">WhatsApp</a>
     </div>
-</div>
+    <ol class="track mt-2" style="grid-column: 1 / -1" aria-label="Avance">
+        @for (var i = 0; i < steps.Count; i++)
+        {
+            var css = i < current ? "done" : i == current ? "current" : "";
+            <li class="@css" aria-current="@(i == current ? "step" : null)"><span class="track-label">@steps[i].Label</span></li>
+        }
+    </ol>
+</section>
 
 @if (suggestWhatsApp)
 {
-    <div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <span>¿Le avisás al cliente del cambio de estado?</span>
+    <div class="notice notice-whatsapp mb-3">
+        <span>¿Le avisás al cliente que la orden quedó <strong>@Model.Status.Name().ToLower()</strong>?</span>
         <a class="btn btn-whatsapp btn-sm" href="@whatsapp" target="_blank" rel="noopener">Enviar mensaje por WhatsApp</a>
     </div>
 }
 
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="section-title">Estado de la reparación</div>
-        <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-center">
-            <div class="col-12 col-md">
-                <select name="status" class="form-select" aria-label="Nuevo estado">
-                    @foreach (var s in statuses)
-                    {
-                        <option value="@s" selected="@(s == Model.Status)">@s.Name()</option>
-                    }
-                </select>
-            </div>
-            <div class="col-12 col-md-auto d-grid">
-                <button type="submit" class="btn btn-primary">Cambiar estado</button>
-            </div>
-        </form>
-        <div class="d-flex flex-wrap gap-2 mt-2">
-            @if (Model.Status != OrderStatus.Ready && !Model.IsClosed)
+@if (abandoned)
+{
+    var reminder = WhatsApp.Link(customer, WhatsApp.PickupReminder(Model, shop), shop);
+    <div class="notice notice-magenta mb-3">
+        <span>Lleva <strong>@daysWaiting días</strong> esperando a que la retiren. Mandale un último aviso; si no viene, se envía a reciclaje.</span>
+        <span class="notice-actions">
+            <a class="btn btn-whatsapp btn-sm" href="@reminder" target="_blank" rel="noopener">Recordar por WhatsApp</a>
+            <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('¿Enviar la orden @Model.Number a reciclaje? Se cierra la orden.');">
+                <input type="hidden" name="status" value="@OrderStatus.Recycled" />
+                <button type="submit" class="btn btn-outline-magenta btn-sm">Enviar a reciclaje</button>
+            </form>
+        </span>
+    </div>
+}
+
+@* ---------- Siguiente paso ---------- *@
+<section class="panel mb-3">
+    <div class="panel-body">
+        <h2 class="panel-title">Siguiente paso</h2>
+        <div class="next-step">
+            @if (!Model.IsClosed && !Model.IsAwaitingPickup)
             {
                 <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
                     <input type="hidden" name="status" value="@OrderStatus.Ready" />
-                    <button type="submit" class="btn btn-success btn-sm">Marcar como lista</button>
+                    <button type="submit" class="btn btn-success">Marcar como lista</button>
+                </form>
+                <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                    <input type="hidden" name="status" value="@OrderStatus.NotRepaired" />
+                    <button type="submit" class="btn btn-outline-magenta">No se pudo reparar</button>
                 </form>
             }
             @if (Model.Status == OrderStatus.Ready)
             {
                 <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
                     <input type="hidden" name="status" value="@OrderStatus.Delivered" />
-                    <button type="submit" class="btn btn-dark btn-sm">Entregar al cliente</button>
+                    <button type="submit" class="btn btn-dark">Entregar al cliente</button>
                 </form>
+                <span class="text-body-secondary">
+                    @(due is > 0 ? $"Cobrar {Display.Money(due)}." : "No tiene saldo pendiente.")
+                    Se le dan @Display.Warranty(Model.WarrantyDays ?? shop.WarrantyDays) de garantía.
+                </span>
+            }
+            @if (Model.Status == OrderStatus.NotRepaired)
+            {
+                <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                    <input type="hidden" name="status" value="@OrderStatus.ReturnedUnrepaired" />
+                    <button type="submit" class="btn btn-dark">Entregar sin reparar</button>
+                </form>
+                <span class="text-body-secondary">
+                    @(due is > 0 ? $"Cobrar el diagnóstico: {Display.Money(due)}." : "El adelanto cubre el diagnóstico.")
+                </span>
+            }
+            @if (Model.IsClosed)
+            {
+                <span class="text-body-secondary">Esta orden ya está cerrada.</span>
             }
         </div>
-    </div>
-</div>
 
-<div class="row g-3">
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between">
-                <span>Cliente</span>
-                <a class="small fw-normal" asp-controller="Customers" asp-action="Details" asp-route-id="@customer.Id">Ver ficha</a>
-            </div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Nombre</dt><dd>@customer.Name</dd>
-                    <dt>Teléfono</dt><dd><a href="tel:@Display.Digits(customer.Phone)">@customer.Phone</a></dd>
-                    <dt>Correo</dt><dd>@Display.OrEmpty(customer.Email)</dd>
-                    <dt>Cédula</dt><dd>@Display.OrEmpty(customer.IdNumber)</dd>
-                </dl>
-            </div>
-        </div>
+        <details class="other-status mt-2">
+            <summary>Cambiar a otro estado</summary>
+            <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-center">
+                <div class="col-12 col-sm-8 col-md-5">
+                    <select name="status" class="form-select" aria-label="Nuevo estado">
+                        @foreach (var s in statuses)
+                        {
+                            <option value="@s" selected="@(s == Model.Status)">@s.Name()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-sm-auto d-grid">
+                    <button type="submit" class="btn btn-primary">Cambiar estado</button>
+                </div>
+            </form>
+        </details>
     </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between">
-                <span>Impresora</span>
-                <a class="small fw-normal" asp-controller="Printers" asp-action="Details" asp-route-id="@printer.Id">Ver historial</a>
-            </div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Equipo</dt><dd>@printer.DisplayName</dd>
-                    <dt>Serie</dt><dd>@Display.OrEmpty(printer.SerialNumber)</dd>
-                    <dt>Tecnología</dt><dd>@printer.Technology.Name()</dd>
-                    <dt>Tipo</dt><dd>@printer.Category.Name()@(printer.IsMultifunction ? " · multifuncional" : "")@(printer.IsColor ? " · color" : "")</dd>
-                    @if (!string.IsNullOrWhiteSpace(printer.Description))
-                    {
-                        <dt>Detalles</dt><dd>@printer.Description</dd>
-                    }
-                </dl>
-            </div>
+</section>
+
+@* ---------- Datos ---------- *@
+<div class="panel facts">
+    <section>
+        <div class="facts-head">
+            <h2>Cliente</h2>
+            <a asp-controller="Customers" asp-action="Details" asp-route-id="@customer.Id">Ver ficha</a>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">Cómo la dejaron</div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Falla reportada</dt><dd>@Model.ReportedIssue</dd>
-                    <dt>Accesorios</dt><dd>@Display.OrEmpty(Model.Accessories)</dd>
-                    <dt>Estado físico</dt><dd>@Display.OrEmpty(Model.PhysicalCondition)</dd>
-                </dl>
-            </div>
+        <dl class="data-list">
+            <dt>Nombre</dt><dd>@customer.Name</dd>
+            <dt>Teléfono</dt><dd><a href="tel:@Display.Digits(customer.Phone)">@customer.Phone</a></dd>
+            <dt>Correo</dt><dd>@Display.OrEmpty(customer.Email)</dd>
+            <dt>Cédula</dt><dd>@Display.OrEmpty(customer.IdNumber)</dd>
+        </dl>
+    </section>
+    <section>
+        <div class="facts-head">
+            <h2>Impresora</h2>
+            <a asp-controller="Printers" asp-action="Details" asp-route-id="@printer.Id">Ver historial</a>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between">
-                <span>Trabajo del taller</span>
-                <a class="small fw-normal" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
-            </div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Diagnóstico</dt><dd>@Display.OrEmpty(Model.Diagnosis)</dd>
-                    <dt>Pendientes</dt><dd>@Display.OrEmpty(Model.PendingWork)</dd>
-                </dl>
-            </div>
+        <dl class="data-list">
+            <dt>Equipo</dt><dd>@printer.DisplayName</dd>
+            <dt>Serie</dt><dd>@Display.OrEmpty(printer.SerialNumber)</dd>
+            <dt>Tecnología</dt><dd>@printer.Technology.Name()</dd>
+            <dt>Tipo</dt><dd>@printer.Category.Name()@(printer.IsMultifunction ? ", multifuncional" : "")@(printer.IsColor ? ", a color" : "")</dd>
+            @if (!string.IsNullOrWhiteSpace(printer.Description))
+            {
+                <dt>Detalles</dt><dd>@printer.Description</dd>
+            }
+        </dl>
+    </section>
+    <section>
+        <div class="facts-head"><h2>Cómo la dejaron</h2></div>
+        <dl class="data-list">
+            <dt>Falla reportada</dt><dd>@Model.ReportedIssue</dd>
+            <dt>Accesorios</dt><dd>@Display.OrEmpty(Model.Accessories)</dd>
+            <dt>Estado físico</dt><dd>@Display.OrEmpty(Model.PhysicalCondition)</dd>
+        </dl>
+    </section>
+    <section>
+        <div class="facts-head">
+            <h2>Trabajo del taller</h2>
+            <a asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">Cobro</div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Cotización</dt><dd>@Display.Money(Model.Quote)</dd>
-                    <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
-                    <dt>Saldo</dt><dd class="fw-semibold">@Display.Money(Model.Balance)</dd>
-                </dl>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">Fechas</div>
-            <div class="card-body">
-                <dl class="data-list">
-                    <dt>Ingreso</dt><dd>@Display.DateTimeShort(Model.ReceivedAt)</dd>
-                    <dt>Estimada</dt><dd>@Display.Date(Model.EstimatedDate)</dd>
-                    <dt>Lista desde</dt><dd>@Display.DateTimeShort(Model.ReadyAt)</dd>
-                    <dt>Entregada</dt><dd>@Display.DateTimeShort(Model.DeliveredAt)</dd>
-                    <dt>Garantía</dt><dd>@warranty</dd>
-                </dl>
-            </div>
-        </div>
-    </div>
+        <dl class="data-list">
+            <dt>Diagnóstico</dt><dd>@Display.OrEmpty(Model.Diagnosis)</dd>
+            <dt>Pendientes</dt><dd>@Display.OrEmpty(Model.PendingWork)</dd>
+        </dl>
+    </section>
+    <section>
+        <div class="facts-head"><h2>Cobro</h2></div>
+        <dl class="data-list">
+            @if (Model.ChargesDiagnosisOnly)
+            {
+                <dt>Diagnóstico</dt><dd>@Display.Money(shop.DiagnosisFee)</dd>
+                <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
+                <dt>A cobrar</dt><dd class="total">@Display.Money(due)</dd>
+            }
+            else
+            {
+                <dt>Cotización</dt><dd>@Display.Money(Model.Quote)</dd>
+                <dt>Adelanto</dt><dd>@Display.Money(Model.Deposit)</dd>
+                <dt>A cobrar</dt><dd class="total">@Display.Money(due)</dd>
+                @if (!Model.IsClosed)
+                {
+                    <dt>Si no se repara</dt><dd>Diagnóstico de @Display.Money(shop.DiagnosisFee)</dd>
+                }
+            }
+        </dl>
+    </section>
+    <section>
+        <div class="facts-head"><h2>Fechas</h2></div>
+        <dl class="data-list">
+            <dt>Ingreso</dt><dd>@Display.DateTimeShort(Model.ReceivedAt)</dd>
+            <dt>Estimada</dt><dd>@Display.Date(Model.EstimatedDate)</dd>
+            <dt>Por retirar desde</dt><dd>@Display.DateTimeShort(Model.ReadyAt)</dd>
+            <dt>Entregada</dt><dd>@Display.DateTimeShort(Model.DeliveredAt)</dd>
+            <dt>Garantía</dt><dd>@warranty</dd>
+        </dl>
+    </section>
 </div>

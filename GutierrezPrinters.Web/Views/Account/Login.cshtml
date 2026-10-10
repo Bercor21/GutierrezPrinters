@@ -1,19 +1,18 @@
 @model LoginViewModel
+@inject IOptions<ShopOptions> ShopSettings
 @{
     ViewData["Title"] = "Iniciar sesión";
 }
 
 <div class="auth-wrapper">
     <div class="auth-card">
-        <div class="text-center mb-4">
-            <div class="rounded-3 fw-bold mb-3"
-                 style="display:inline-grid;place-items:center;width:3.5rem;height:3.5rem;background:#13263f;color:#f2a541;font-size:1.3rem;">GP</div>
-            <h1 class="h4 fw-bold mb-1">Gutierrez Printers</h1>
-            <p class="text-body-secondary mb-0">Control de reparaciones</p>
+        <div class="auth-brand">
+            <img class="auth-logo" src="~/img/logo.jpg" alt="@ShopSettings.Value.Name" width="900" height="700" />
+            <p>Control de reparaciones</p>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
+        <div class="panel">
+            <div class="panel-body p-4">
                 <form asp-action="Login" method="post">
                     <input type="hidden" asp-for="ReturnUrl" />
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>

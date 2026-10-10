@@ -27,11 +27,8 @@ public static class WhatsApp
 
     public static string OrderMessage(RepairOrder order, ShopOptions shop)
     {
-        var customer = order.Printer?.Customer;
-        var firstName = (customer?.Name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
-        var printer = order.Printer?.DisplayName ?? "su impresora";
-        var hello = $"Hola {firstName}, le saluda {shop.Name}.";
-        var reference = $"su impresora {printer} (orden {order.Number})";
+        var (hello, reference) = Parts(order, shop);
+        var due = order.AmountDue(shop.DiagnosisFee);
 
         return order.Status switch
         {
@@ -50,14 +47,48 @@ public static class WhatsApp
                 $"{hello} Le contamos que {reference} ya está en reparación.",
             OrderStatus.Ready =>
                 $"{hello} ¡Buenas noticias! {Capitalize(reference)} ya está lista para retirar." +
-                (order.Balance is > 0 ? $" Saldo pendiente: {Display.Money(order.Balance)}." : ""),
+                (due is > 0 ? $" Saldo pendiente: {Display.Money(due)}." : "") +
+                (shop.WarrantyDays > 0 ? $" La reparación tiene {Display.Warranty(shop.WarrantyDays)} de garantía." : ""),
+            OrderStatus.NotRepaired =>
+                $"{hello} Lamentablemente {reference} no se pudo reparar." +
+                (string.IsNullOrWhiteSpace(order.Diagnosis) ? "" : $" Diagnóstico: {order.Diagnosis.Trim()}.") +
+                $" El diagnóstico tiene un costo de {Display.Money(shop.DiagnosisFee)}" +
+                (order.Deposit > 0 ? $"; con su adelanto, el saldo es {Display.Money(due)}." : ".") +
+                " Puede pasar a retirarla cuando guste.",
             OrderStatus.Delivered =>
                 $"{hello} Gracias por su confianza. Le confirmamos la entrega de {reference}." +
                 (order.WarrantyUntil.HasValue ? $" La garantía es válida hasta el {Display.Date(order.WarrantyUntil)}." : ""),
-            OrderStatus.NotRepaired =>
-                $"{hello} Lamentablemente {reference} no se pudo reparar. Puede pasar a retirarla cuando guste.",
+            OrderStatus.ReturnedUnrepaired =>
+                $"{hello} Gracias por su confianza. Le confirmamos la entrega de {reference}.",
+            OrderStatus.Recycled =>
+                $"{hello} Le informamos que {reference} fue enviada a reciclaje porque no se retiró a tiempo, " +
+                "según las condiciones aceptadas al dejarla.",
             _ => hello
         };
+    }
+
+    // Recordatorio para las que llevan mucho tiempo listas sin que las retiren.
+    public static string PickupReminder(RepairOrder order, ShopOptions shop)
+    {
+        var (hello, reference) = Parts(order, shop);
+        var due = order.AmountDue(shop.DiagnosisFee);
+
+        return $"{hello} Le recordamos que {reference} está lista para retirar desde el {Display.Date(order.ReadyAt)}." +
+               (due is > 0 ? $" Saldo pendiente: {Display.Money(due)}." : "") +
+               " Le pedimos pasar a retirarla lo antes posible; de lo contrario será enviada a reciclaje, " +
+               "según las condiciones aceptadas al dejarla.";
+    }
+
+    private static (string Hello, string Reference) Parts(RepairOrder order, ShopOptions shop)
+    {
+        var customer = order.Printer?.Customer;
+        var firstName = (customer?.Name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+        var printer = order.Printer?.DisplayName ?? "";
+        var hello = $"Hola {firstName}, le saluda {shop.Name}.";
+        var reference = string.IsNullOrWhiteSpace(printer)
+            ? $"su impresora (orden {order.Number})"
+            : $"su impresora {printer} (orden {order.Number})";
+        return (hello, reference);
     }
 
     private static string Capitalize(string text) =>
