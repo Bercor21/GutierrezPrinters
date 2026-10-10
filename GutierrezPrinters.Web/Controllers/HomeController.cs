@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace GutierrezPrinters.Web.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : Controller        
     {
         public IActionResult Index()
         {
@@ -13,9 +13,12 @@ namespace GutierrezPrinters.Web.Controllers
 
         public IActionResult Order(int id)
         {
-            return Content ("Orden #" + id);
+            if (id <= 0 && id >= 9999)
+            {
+                return BadRequest("Número de orden inválido");
+            }
+            return Content("Orden #" + id);
         }
-
 
         public IActionResult Privacy()
         {
