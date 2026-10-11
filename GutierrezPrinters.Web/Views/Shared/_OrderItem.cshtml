@@ -3,7 +3,7 @@
     var customer = Model.Printer?.Customer;
     var serial = Model.Printer?.SerialNumber;
 }
-<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="order-row">
+<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="order-row @Display.StatusTone(Model.Status)">
     <span class="order-number">@Model.Number</span>
     <span class="who">
         <span class="primary-text d-block">@customer?.Name</span>

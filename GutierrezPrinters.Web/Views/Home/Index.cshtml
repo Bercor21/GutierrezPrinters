@@ -9,18 +9,22 @@
     var attentionCount = Model.Abandoned.Count + Model.Overdue.Count;
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-    <h1 class="page-title">Panel del taller</h1>
-    <span class="today">@today</span>
-</div>
-
-<form asp-controller="Orders" asp-action="Index" method="get" class="search-hero mb-3" role="search">
-    <div class="input-group">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-        <input type="search" name="q" class="form-control" placeholder="Orden, cliente, teléfono, modelo o serie" aria-label="Buscar" autocomplete="off" />
-        <button class="btn btn-primary" type="submit">Buscar</button>
+<section class="hero mb-3">
+    <div class="min-w-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+            <h1 class="page-title">Panel del taller</h1>
+            <span class="today">@today</span>
+        </div>
+        <form asp-controller="Orders" asp-action="Index" method="get" class="search-hero" role="search">
+            <div class="input-group">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input type="search" name="q" class="form-control" placeholder="Orden, cliente, tel. o serie" aria-label="Buscar por orden, cliente, teléfono, modelo o serie" autocomplete="off" />
+                <button class="btn btn-primary" type="submit">Buscar</button>
+            </div>
+        </form>
     </div>
-</form>
+    <img class="hero-logo" src="~/img/logo.jpg" alt="" width="900" height="700" />
+</section>
 
 @* Cuántas hay en cada etapa, en el orden en que avanza el trabajo. *@
 <nav class="flow mb-4" aria-label="Impresoras por etapa">
@@ -28,19 +32,19 @@
         <span class="value">@Model.OpenCount</span>
         <span class="label">en el taller</span>
     </a>
-    <a asp-controller="Orders" asp-action="Index" asp-route-estado="por-diagnosticar">
+    <a class="stage tone-teal" asp-controller="Orders" asp-action="Index" asp-route-estado="por-diagnosticar">
         <span class="value">@Count(OrderStatus.Received, OrderStatus.Diagnosis)</span>
-        <span class="label"><span class="dot tone-cyan"></span>Por diagnosticar</span>
+        <span class="label"><span class="dot tone-teal"></span>Por diagnosticar</span>
     </a>
-    <a asp-controller="Orders" asp-action="Index" asp-route-estado="esperando">
+    <a class="stage tone-yellow" asp-controller="Orders" asp-action="Index" asp-route-estado="esperando">
         <span class="value">@Count(OrderStatus.AwaitingApproval, OrderStatus.AwaitingParts)</span>
         <span class="label"><span class="dot tone-yellow"></span>Esperando cliente o repuesto</span>
     </a>
-    <a asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.InRepair">
+    <a class="stage tone-cyan" asp-controller="Orders" asp-action="Index" asp-route-estado="@OrderStatus.InRepair">
         <span class="value">@Count(OrderStatus.InRepair)</span>
         <span class="label"><span class="dot tone-cyan"></span>En reparación</span>
     </a>
-    <a asp-controller="Orders" asp-action="Index" asp-route-estado="por-retirar">
+    <a class="stage tone-green" asp-controller="Orders" asp-action="Index" asp-route-estado="por-retirar">
         <span class="value">@Count(OrderStatus.Ready, OrderStatus.NotRepaired)</span>
         <span class="label"><span class="dot tone-green"></span>Por retirar</span>
     </a>

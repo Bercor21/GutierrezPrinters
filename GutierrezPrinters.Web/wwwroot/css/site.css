@@ -31,12 +31,16 @@
   --gp-ink-2: #4a5468;        /* texto secundario */
   --gp-ink-3: #697286;        /* notas */
   --gp-line: #d9dee6;
-  --gp-bench: #eceff3;        /* fondo de la página */
+  --gp-bench: #edf1f6;        /* fondo de la página */
   --gp-paper: #ffffff;
 
   --gp-cyan: #1a619b;         /* azul del logo: acciones y "se está trabajando" */
   --gp-cyan-dark: #134a78;
   --gp-cyan-tint: #e6eff7;
+  --gp-brand: #175a8f;        /* la barra de arriba, en el azul del logo */
+  --gp-teal: #2e7896;         /* cian del logo: diagnóstico */
+  --gp-teal-dark: #215c74;
+  --gp-teal-tint: #e3f1f6;
   /* Los colores de las manchas de tinta del logo */
   --gp-magenta: #9a1f5f;      /* "ojo con esta" */
   --gp-magenta-dark: #7a184b;
@@ -131,11 +135,20 @@ main {
 
 /* ---- Barra superior ---- */
 .app-nav {
-  background: var(--gp-ink);
+  background: var(--gp-brand);
   color: #fff;
   position: sticky;
   top: 0;
   z-index: 1030;
+}
+
+/* Franja con las cuatro tintas del logo debajo de la barra. */
+.app-nav::after {
+  content: "";
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg,
+    #3f8dac 0 25%, #97205d 25% 50%, #d99d19 50% 75%, #1a1f29 75% 100%);
 }
 
 .app-nav .nav-inner {
@@ -187,7 +200,7 @@ main {
 .app-links a {
   display: block;
   padding: 1.1rem 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   font-weight: 500;
   border-bottom: 3px solid transparent;
@@ -439,6 +452,10 @@ main {
   border-radius: var(--gp-radius);
 }
 
+.panel {
+  overflow: hidden;
+}
+
 .card-header {
   background: transparent;
   border-bottom: 1px solid var(--gp-line);
@@ -531,6 +548,7 @@ main {
 }
 
 .status.tone-cyan { background: var(--gp-cyan-tint); color: var(--gp-cyan-dark); }
+.status.tone-teal { background: var(--gp-teal-tint); color: var(--gp-teal-dark); }
 .status.tone-yellow { background: var(--gp-yellow-tint); color: var(--gp-yellow-dark); }
 .status.tone-yellow::before { background: var(--gp-yellow); }
 .status.tone-green { background: var(--gp-green-tint); color: var(--gp-green-dark); }
@@ -559,6 +577,15 @@ a.order-row:hover {
   background: #f6f8fa;
   color: inherit;
 }
+
+/* Barrita de color a la izquierda según el estado */
+.order-row.tone-teal { box-shadow: inset 4px 0 0 var(--gp-teal); }
+.order-row.tone-cyan { box-shadow: inset 4px 0 0 var(--gp-cyan); }
+.order-row.tone-yellow { box-shadow: inset 4px 0 0 var(--gp-yellow); }
+.order-row.tone-green { box-shadow: inset 4px 0 0 var(--gp-green); }
+.order-row.tone-magenta { box-shadow: inset 4px 0 0 var(--gp-magenta); }
+.order-row.tone-neutral { box-shadow: inset 4px 0 0 #a3a9b5; }
+.order-row.tone-closed { box-shadow: inset 4px 0 0 var(--gp-line); }
 
 .order-row .order-number {
   font-size: 1.05rem;
@@ -595,16 +622,21 @@ a.order-row:hover {
   .order-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-      "num who state"
-      "num what when";
+      "num who who"
+      "num what what"
+      "num state when";
     align-items: start;
     gap: 0.1rem 0.85rem;
+  }
+
+  .order-row .state {
+    margin-top: 0.35rem;
   }
 
   .order-row .order-number { grid-area: num; padding-top: 0.1rem; }
   .order-row .who { grid-area: who; }
   .order-row .what { grid-area: what; }
-  .order-row .state { grid-area: state; text-align: right; }
+  .order-row .state { grid-area: state; }
   .order-row .when { grid-area: when; align-self: end; }
 }
 
@@ -641,6 +673,45 @@ a.order-row:hover {
 }
 
 /* ---- Panel de inicio ---- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem 2rem;
+  align-items: center;
+  background: var(--gp-paper);
+  border: 1px solid var(--gp-line);
+  border-radius: var(--gp-radius);
+  padding: 1.25rem 1.5rem;
+}
+
+.hero-logo {
+  width: 190px;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 767.98px) {
+  /* En el celular el encabezado va directo sobre el fondo, para que el buscador tenga más espacio. */
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  .search-hero .search-icon {
+    display: none;
+  }
+
+  .search-hero .form-control {
+    padding-left: 0.85rem !important;
+  }
+
+  .hero-logo {
+    display: none;
+  }
+}
+
 .today {
   color: var(--gp-ink-2);
   font-size: 0.95rem;
@@ -700,33 +771,34 @@ a.order-row:hover {
 
 .flow .flow-total {
   border-left: 0;
-  background: var(--gp-ink);
+  background: var(--gp-brand);
   color: #fff;
   padding-left: 1.1rem;
 }
 
 .flow .flow-total:hover {
-  background: #262d3a;
+  background: var(--gp-cyan-dark);
   color: #fff;
 }
 
-/* Flechita entre etapas */
-.flow a + a:not(.flow-total)::before {
-  content: "";
-  position: absolute;
-  left: -7px;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  background: var(--gp-paper);
-  border-top: 1px solid var(--gp-line);
-  border-right: 1px solid var(--gp-line);
-  transform: translateY(-50%) rotate(45deg);
+/* Cada etapa con su color de tinta: franja arriba, fondo suave y número en color. */
+.flow a.stage {
+  border-top: 4px solid var(--stage);
+  background: var(--stage-tint);
 }
 
-.flow .flow-total + a::before {
-  display: none;
+.flow a.stage:hover {
+  background: var(--paper-hover, #fff);
 }
+
+.flow a.stage .value {
+  color: var(--stage-ink);
+}
+
+.flow .stage.tone-teal { --stage: var(--gp-teal); --stage-tint: var(--gp-teal-tint); --stage-ink: var(--gp-teal-dark); }
+.flow .stage.tone-yellow { --stage: var(--gp-yellow); --stage-tint: var(--gp-yellow-tint); --stage-ink: var(--gp-yellow-dark); }
+.flow .stage.tone-cyan { --stage: var(--gp-cyan); --stage-tint: var(--gp-cyan-tint); --stage-ink: var(--gp-cyan-dark); }
+.flow .stage.tone-green { --stage: var(--gp-green); --stage-tint: var(--gp-green-tint); --stage-ink: var(--gp-green-dark); }
 
 .flow .value {
   display: block;
@@ -759,6 +831,7 @@ a.order-row:hover {
 }
 
 .dot.tone-cyan { background: var(--gp-cyan); }
+.dot.tone-teal { background: var(--gp-teal); }
 .dot.tone-yellow { background: var(--gp-yellow); }
 .dot.tone-green { background: var(--gp-green); }
 .dot.tone-magenta { background: var(--gp-magenta); }
@@ -787,10 +860,6 @@ a.order-row:hover {
 
   .flow a:nth-child(odd):not(.flow-total) {
     border-left: 1px solid var(--gp-line);
-  }
-
-  .flow a + a:not(.flow-total)::before {
-    display: none;
   }
 
   .flow .value {
@@ -864,6 +933,7 @@ a.order-row:hover {
 }
 
 .ticket.tone-cyan { --tone: var(--gp-cyan); }
+.ticket.tone-teal { --tone: var(--gp-teal); }
 .ticket.tone-yellow { --tone: var(--gp-yellow); }
 .ticket.tone-green { --tone: var(--gp-green); }
 .ticket.tone-magenta { --tone: var(--gp-magenta); }
