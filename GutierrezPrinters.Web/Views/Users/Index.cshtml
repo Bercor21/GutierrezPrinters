@@ -1,0 +1,69 @@
+@model List<UserRowViewModel>
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="page-title">Usuarios</h1>
+        <p class="page-subtitle">Las personas que pueden entrar al sistema. No hay registro público: solo entra quien esté en esta lista.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">+ Nuevo usuario</a>
+</div>
+
+<div class="panel">
+    @foreach (var u in Model)
+    {
+        <div class="user-row">
+            <div class="min-w-0">
+                <div class="primary-text text-break">
+                    @u.Email
+                    @if (u.IsCurrentUser)
+                    {
+                        <span class="text-body-secondary fw-normal">(vos)</span>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-1">
+                    @if (u.IsAdmin)
+                    {
+                        <span class="status tone-cyan">Administrador</span>
+                    }
+                    else
+                    {
+                        <span class="status tone-neutral">Usuario</span>
+                    }
+                    @if (u.IsLockedOut)
+                    {
+                        <span class="status tone-magenta">Bloqueado por intentos fallidos</span>
+                    }
+                </div>
+            </div>
+
+            <div class="user-actions">
+                <details class="other-status">
+                    <summary>Cambiar contraseña</summary>
+                    <form asp-action="ResetPassword" method="post" class="d-flex flex-wrap gap-2">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <input type="text" name="newPassword" class="form-control form-control-sm" style="max-width: 14rem"
+                               placeholder="Contraseña nueva" autocomplete="off" aria-label="Contraseña nueva para @u.Email" required minlength="8" />
+                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                    </form>
+                </details>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <form asp-action="ToggleAdmin" method="post">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">@(u.IsAdmin ? "Quitar administrador" : "Hacer administrador")</button>
+                    </form>
+                    @if (!u.IsCurrentUser)
+                    {
+                        <form asp-action="Delete" method="post" onsubmit="return confirm('¿Eliminar el usuario @u.Email? Ya no va a poder entrar.');">
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-magenta">Eliminar</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
