@@ -56,11 +56,13 @@ public static class Display
         return attribute?.GetName() ?? value.ToString();
     }
 
-    // Color de cada estado (ver site.css): cian = se está trabajando, amarillo = esperando a alguien,
+    // Color de cada estado (ver site.css), sacados de las manchas de tinta del logo:
+    // cian = diagnóstico, azul = en reparación, dorado = esperando a alguien,
     // verde = lista, magenta = ojo, gris = recién recibida o ya cerrada.
     public static string StatusTone(OrderStatus status) => status switch
     {
-        OrderStatus.Diagnosis or OrderStatus.InRepair => "tone-cyan",
+        OrderStatus.Diagnosis => "tone-teal",
+        OrderStatus.InRepair => "tone-cyan",
         OrderStatus.AwaitingApproval or OrderStatus.AwaitingParts => "tone-yellow",
         OrderStatus.Ready => "tone-green",
         OrderStatus.NotRepaired => "tone-magenta",
