@@ -25,7 +25,9 @@ estados y buscador. Funciona desde la computadora y desde el celular.
 - **Alertas** de órdenes atrasadas y de impresoras que llevan 30 días sin que las retiren,
   con un recordatorio por WhatsApp y la opción de enviarlas a reciclaje.
 - **Respaldo en Excel** de órdenes, equipos y clientes.
-- **Inicio de sesión** obligatorio. No hay registro público.
+- **Inicio de sesión** obligatorio. No hay registro público: los administradores crean las
+  cuentas en **Usuarios** (menú de arriba a la derecha), cambian contraseñas y dan o quitan
+  permisos de administrador.
 
 ## Tecnologías
 
