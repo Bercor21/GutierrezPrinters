@@ -1,3 +1,4 @@
+using GutierrezPrinters.Web.Services;
 using GutierrezPrinters.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -89,7 +90,7 @@ public class AccountController : Controller
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, Translate(error));
+                ModelState.AddModelError(string.Empty, IdentityErrors.Spanish(error));
             }
 
             return View(model);
@@ -99,13 +100,4 @@ public class AccountController : Controller
         TempData["Message"] = "Contraseña actualizada.";
         return RedirectToAction("Index", "Home");
     }
-
-    private static string Translate(IdentityError error) => error.Code switch
-    {
-        "PasswordMismatch" => "La contraseña actual no es correcta.",
-        "PasswordTooShort" => "La contraseña nueva es muy corta.",
-        "PasswordRequiresDigit" => "La contraseña nueva debe tener al menos un número.",
-        "PasswordRequiresLower" => "La contraseña nueva debe tener al menos una minúscula.",
-        _ => error.Description
-    };
 }

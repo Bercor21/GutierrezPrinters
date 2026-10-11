@@ -651,6 +651,45 @@ a.order-row:hover {
   color: var(--gp-ink-2);
 }
 
+/* Filas de la pantalla de usuarios */
+.user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem 1.5rem;
+  align-items: start;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--gp-line);
+}
+
+.user-row:last-child {
+  border-bottom: 0;
+}
+
+.user-row .primary-text {
+  font-weight: 600;
+}
+
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.user-actions .other-status summary {
+  padding: 0;
+}
+
+@media (max-width: 767.98px) {
+  .user-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-actions {
+    align-items: flex-start;
+  }
+}
+
 /* Encabezado de una lista dentro de un panel */
 .list-head {
   display: flex;
