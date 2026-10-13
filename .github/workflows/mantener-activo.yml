@@ -1,0 +1,38 @@
+# Despertador del sistema: todos los días visita /Home/Ping en Azure.
+# Esa página hace una consulta de solo lectura a Supabase, así la base de datos
+# siempre tiene actividad y el plan gratis no la pausa. No cambia ningún dato.
+#
+# La dirección del sistema va en un secreto del repositorio llamado APP_URL
+# (GitHub → Settings → Secrets and variables → Actions), para no publicarla aquí.
+
+name: Mantener activo
+
+on:
+  schedule:
+    - cron: "17 13 * * *"   # todos los días a las 7:17 a. m. de Costa Rica (13:17 UTC)
+  workflow_dispatch:         # botón "Run workflow" para probarlo a mano
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Visitar el sistema
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "Falta el secreto APP_URL con la dirección del sistema."
+            exit 1
+          fi
+          # Azure puede estar dormido: se dan varios intentos con tiempo de sobra.
+          for intento in 1 2 3; do
+            if curl -fsS --max-time 120 "${APP_URL%/}/Home/Ping"; then
+              echo ""
+              echo "Listo: el sistema respondió y Supabase registró actividad."
+              exit 0
+            fi
+            echo "Intento $intento sin respuesta, esperando 30 segundos..."
+            sleep 30
+          done
+          echo "El sistema no respondió."
+          exit 1

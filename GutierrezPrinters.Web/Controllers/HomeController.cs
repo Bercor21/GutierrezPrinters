@@ -58,6 +58,18 @@ public class HomeController : Controller
         return View(model);
     }
 
+    // "Despertador": GitHub lo visita todos los días (ver .github/workflows/mantener-activo.yml)
+    // para que Supabase vea actividad y no pause la base de datos.
+    // Solo LEE la base (pregunta si hay clientes); no cambia ni muestra ningún dato.
+    [AllowAnonymous]
+    [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> Ping()
+    {
+        await _db.Customers.AnyAsync();
+        return Content("ok");
+    }
+
     [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
