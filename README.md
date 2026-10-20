@@ -89,12 +89,27 @@ En `appsettings.json`, sección `Shop`, se cambian sin tocar código:
 | `PublicUrl` | La dirección del sistema en internet (cuando esté en Azure). El QR de la etiqueta la usa para abrir la orden desde el celular. |
 | `LabelWidthMm`, `LabelHeightMm` | Tamaño de la etiqueta. Por defecto 101.6 × 152.4 mm (4 × 6 pulgadas). |
 | `WarrantyDays` | Garantía que se pone sola al entregar (180 = 6 meses). |
-| `DiagnosisFee` | Lo que se cobra por el diagnóstico si no se repara (7000). |
+| `DiagnosisFee` | Lo que cuesta el diagnóstico; se cobra siempre, se repare o no (7000). |
 | `AbandonedAfterDays` | Días sin retirar antes de la alerta de reciclaje (30). |
 | `Terms` | Condiciones de la boleta. `{diagnostico}`, `{garantia}` y `{dias}` se cambian solos por los valores de arriba. |
 
 El logo está en `wwwroot/img`: `logo.jpg` (completo), `wordmark-white.png` (barra de arriba) y
 `wordmark-black.png` (etiqueta). La letra es Archivo (licencia OFL), en `wwwroot/lib/archivo`.
+
+## En Azure: que abra rápido
+
+El plan gratis de Azure (F1) apaga el sistema si nadie entra en 20 minutos, y el siguiente que
+lo abre espera a que vuelva a arrancar. Para evitarlo:
+
+- **Despertador interno** (`Services/KeepAwakeService.cs`): en Azure, el sistema visita su
+  propia página `/Home/Ping` cada 4 minutos, así nunca llega a apagarse y la conexión con
+  Supabase se mantiene abierta. No hay que configurar nada: usa la dirección que Azure le da.
+- **Despertador de respaldo en GitHub** (`.github/workflows/mantener-activo.yml`): una vez al
+  día visita el sistema por si Azure lo hubiera apagado, y le da actividad a Supabase para que
+  no pause la base de datos. Necesita el secreto `APP_URL` en GitHub → Settings → Secrets and
+  variables → Actions, con la dirección del sistema (por ejemplo `https://tu-app.azurewebsites.net`).
+- **Arranque rápido**: al publicar para `win-x86` el código se precompila (ReadyToRun) y al
+  arrancar solo se tocan las tablas si hay migraciones nuevas.
 
 ## Estructura
 
@@ -103,7 +118,7 @@ GutierrezPrinters.Web/
 ├── Controllers/    Home (panel), Orders, Customers, Printers, Account
 ├── Data/           AppDbContext (tablas) y SeedData (primer usuario)
 ├── Models/         Customer, Printer, RepairOrder y los enums
-├── Services/       Formatos, WhatsApp, Excel y datos del taller
+├── Services/       Formatos, WhatsApp, Excel, datos del taller y despertador
 ├── ViewModels/     Formularios
 ├── Views/          Pantallas (Razor)
 └── wwwroot/        CSS, JS, íconos y librerías

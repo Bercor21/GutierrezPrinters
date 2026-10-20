@@ -20,8 +20,11 @@ if (string.IsNullOrWhiteSpace(connectionString))
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString, npgsql =>
-        npgsql.MigrationsHistoryTable("__EFMigrationsHistory", AppDbContext.Schema)));
+    options.UseNpgsql(connectionString, npgsql => npgsql
+        .MigrationsHistoryTable("__EFMigrationsHistory", AppDbContext.Schema)
+        // Si la conexión con Supabase falla un momento (pasa al despertar), se reintenta sola
+        // en vez de mostrar una página de error.
+        .EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null)));
 
 // ---------- 2. Login (ASP.NET Core Identity) ----------
 builder.Services
@@ -59,6 +62,11 @@ builder.Services.AddControllersWithViews(options =>
 // Datos del taller (appsettings.json, sección "Shop").
 builder.Services.Configure<ShopOptions>(builder.Configuration.GetSection("Shop"));
 
+// Despertador interno: en Azure visita /Home/Ping cada 4 minutos para que el plan gratis
+// no apague el sistema (ver Services/KeepAwakeService.cs).
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<KeepAwakeService>();
+
 var app = builder.Build();
 
 // ---------- 4. Idioma: español de Costa Rica, con punto decimal ----------
@@ -86,8 +94,13 @@ using (var scope = app.Services.CreateScope())
 
     if (db.Database.GetMigrations().Any())
     {
-        // Aplica las migraciones pendientes: crea o actualiza las tablas en Supabase.
-        await db.Database.MigrateAsync();
+        // Solo toca las tablas si hay cambios nuevos. Revisarlo es una consulta rápida;
+        // así el arranque normal (cuando Azure despierta el sistema) no hace trabajo de más.
+        if ((await db.Database.GetPendingMigrationsAsync()).Any())
+        {
+            await db.Database.MigrateAsync();
+        }
+
         await SeedData.EnsureAdminUserAsync(scope.ServiceProvider, app.Configuration, logger);
     }
     else
