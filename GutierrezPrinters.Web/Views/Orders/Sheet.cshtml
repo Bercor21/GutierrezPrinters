@@ -19,39 +19,46 @@
     <title>Boleta @Model.Number</title>
     <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
     <style>
-        @@page { size: letter; margin: 11mm 12mm; }
+        /* Hoja carta (215.9 × 279.4 mm). Márgenes 10 × 12 mm: área útil 191.9 × 259.4 mm.
+           Si el texto es muy largo, site.js achica el contenido para que nunca pase de una hoja. */
+        @@page { size: letter; margin: 10mm 12mm; }
         * { box-sizing: border-box; }
         body { margin: 0; color: #111; font-size: 10pt; background: #e6e9ee; }
-        .page { width: 216mm; min-height: 279mm; margin: 16px auto; padding: 11mm 12mm; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a619b; padding-bottom: 2.5mm; margin-bottom: 2mm; }
+        .paper { width: 215.9mm; min-height: 279.4mm; margin: 12px auto; padding: 10mm 12mm; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a619b; padding-bottom: 2mm; margin-bottom: 1.5mm; }
         .shop { display: flex; align-items: center; gap: 4mm; }
-        .shop-logo { height: 24mm; width: auto; display: block; }
+        .shop-logo { height: 20mm; width: auto; display: block; }
         .shop-data { font-size: 8.5pt; color: #333; line-height: 1.4; }
         .doc-title { font-size: 10pt; font-weight: 600; color: #333; text-align: right; }
-        .order-no { font-size: 24pt; font-weight: 900; font-stretch: 125%; text-align: right; line-height: 1.05; font-variant-numeric: tabular-nums; }
+        .order-no { font-size: 22pt; font-weight: 900; font-stretch: 125%; text-align: right; line-height: 1.05; font-variant-numeric: tabular-nums; }
         .head-right { display: flex; gap: 4mm; align-items: center; }
-        .qr { width: 24mm; height: 24mm; }
+        .qr { width: 21mm; height: 21mm; }
         .qr svg { width: 100%; height: 100%; display: block; }
-        h2 { font-size: 10pt; font-weight: 700; color: #1a619b; margin: 3mm 0 1.2mm; border-bottom: 1px solid #c9d2de; padding-bottom: .8mm; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2mm 8mm; }
-        .field { display: flex; gap: 2mm; min-height: 5.5mm; border-bottom: 1px dotted #b8c2cf; padding: .6mm 0; }
+        h2 { font-size: 10pt; font-weight: 700; color: #1a619b; margin: 2.6mm 0 1mm; border-bottom: 1px solid #c9d2de; padding-bottom: .7mm; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 8mm; }
+        .field { display: flex; gap: 2mm; min-height: 5.2mm; border-bottom: 1px dotted #b8c2cf; padding: .5mm 0; }
         .field b { white-space: nowrap; font-weight: 600; color: #333; }
-        .block { border: 1px solid #c9d2de; border-radius: 2mm; padding: 1.5mm 3mm; min-height: 11mm; white-space: pre-line; }
-        .block.tall { min-height: 17mm; }
+        .block { border: 1px solid #c9d2de; border-radius: 2mm; padding: 1.3mm 3mm; min-height: 10mm; white-space: pre-line; overflow-wrap: anywhere; }
+        .block.tall { min-height: 15mm; }
         .money { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
-        .money .box { border: 1px solid #c9d2de; border-radius: 2mm; padding: 2mm 3mm; }
+        .money .box { border: 1px solid #c9d2de; border-radius: 2mm; padding: 1.6mm 3mm; }
         .money .box span { display: block; font-size: 8pt; color: #555; }
         .money .box strong { font-size: 12pt; }
         .terms { font-size: 8pt; color: #333; margin: 1mm 0 0; padding-left: 4.5mm; }
-        .terms li { margin-bottom: .6mm; }
-        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; margin-top: 11mm; break-inside: avoid; }
+        .terms li { margin-bottom: .5mm; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; margin-top: 10mm; }
         .signatures div { border-top: 1px solid #333; text-align: center; padding-top: 1.5mm; font-size: 9pt; }
-        .pickup { break-inside: avoid; margin-top: 6mm; border: 1.5px solid #1a619b; border-radius: 2mm; padding: 3mm 4mm; display: flex; justify-content: space-between; align-items: center; gap: 6mm; }
-        .pickup .big { font-size: 15pt; font-weight: 850; font-stretch: 115%; }
+        .pickup { margin-top: 5mm; border: 1.5px solid #1a619b; border-radius: 2mm; padding: 2.5mm 4mm; display: flex; justify-content: space-between; align-items: center; gap: 6mm; }
+        .pickup .big { font-size: 14pt; font-weight: 850; font-stretch: 115%; }
         .pickup small { color: #333; }
+        @@media screen {
+            /* En el celular la hoja se ve completa (site.js calcula --screen-zoom). */
+            .paper { zoom: var(--screen-zoom, 1); }
+        }
         @@media print {
-            body { background: #fff; }
-            .page { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            html, body { background: #fff; }
+            .paper { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            .fit-box { break-inside: avoid; }
             .toolbar { display: none; }
         }
     </style>
@@ -59,95 +66,100 @@
 <body class="print-preview">
     <div class="toolbar">
         <button type="button" onclick="window.print()">Imprimir boleta</button>
-        <p>Papel tamaño carta. Esta es la copia que se lleva el cliente.</p>
+        <p>Sale siempre en una sola hoja tamaño carta. Esta es la copia que se lleva el cliente.</p>
+        <p class="warn" data-fit-note hidden>El texto es largo: la boleta se achicó un poco para que quepa en una hoja.</p>
     </div>
 
-    <div class="page">
-        <header>
-            <div class="shop">
-                <img class="shop-logo" src="~/img/logo.jpg" alt="@shop.Name" />
-                <div class="shop-data">
-                    <strong>Reparación de impresoras</strong>
-                    @if (!string.IsNullOrWhiteSpace(shop.Phone)) { <br /><span>Tel. @shop.Phone</span> }
-                    @if (!string.IsNullOrWhiteSpace(shop.Address)) { <br /><span>@shop.Address</span> }
+    <div class="paper">
+        <div class="fit-box" data-fit-page="191.9x259.4">
+            <div class="fit-content">
+                <header>
+                    <div class="shop">
+                        <img class="shop-logo" src="~/img/logo.jpg" alt="@shop.Name" />
+                        <div class="shop-data">
+                            <strong>Reparación de impresoras</strong>
+                            @if (!string.IsNullOrWhiteSpace(shop.Phone)) { <br /><span>Tel. @shop.Phone</span> }
+                            @if (!string.IsNullOrWhiteSpace(shop.Address)) { <br /><span>@shop.Address</span> }
+                        </div>
+                    </div>
+                    <div class="head-right">
+                        <div>
+                            <div class="doc-title">Boleta de ingreso</div>
+                            <div class="order-no">@Model.Number</div>
+                            <div class="doc-title">@Display.DateTimeShort(Model.ReceivedAt)</div>
+                        </div>
+                        <div class="qr" data-qr="@orderUrl"></div>
+                    </div>
+                </header>
+
+                <h2>Cliente</h2>
+                <div class="grid">
+                    <div class="field"><b>Nombre:</b> <span>@customer.Name</span></div>
+                    <div class="field"><b>Teléfono:</b> <span>@customer.Phone</span></div>
+                    <div class="field"><b>Correo:</b> <span>@Value(customer.Email)</span></div>
+                    <div class="field"><b>Cédula:</b> <span>@Value(customer.IdNumber)</span></div>
                 </div>
-            </div>
-            <div class="head-right">
-                <div>
-                    <div class="doc-title">Boleta de ingreso</div>
-                    <div class="order-no">@Model.Number</div>
-                    <div class="doc-title">@Display.DateTimeShort(Model.ReceivedAt)</div>
+
+                <h2>Equipo</h2>
+                <div class="grid">
+                    <div class="field"><b>Marca y modelo:</b> <span>@printer.DisplayName</span></div>
+                    <div class="field"><b>N.º de serie:</b> <span>@Value(printer.SerialNumber)</span></div>
+                    <div class="field"><b>Tecnología:</b> <span>@printer.Technology.Name()</span></div>
+                    <div class="field"><b>Tipo:</b> <span>@printer.Category.Name()@(printer.IsMultifunction ? ", multifuncional" : "")@(printer.IsColor ? ", a color" : "")</span></div>
                 </div>
-                <div class="qr" data-qr="@orderUrl"></div>
-            </div>
-        </header>
 
-        <h2>Cliente</h2>
-        <div class="grid">
-            <div class="field"><b>Nombre:</b> <span>@customer.Name</span></div>
-            <div class="field"><b>Teléfono:</b> <span>@customer.Phone</span></div>
-            <div class="field"><b>Correo:</b> <span>@Value(customer.Email)</span></div>
-            <div class="field"><b>Cédula:</b> <span>@Value(customer.IdNumber)</span></div>
-        </div>
+                <h2>Cómo se recibe</h2>
+                <div class="field"><b>Accesorios:</b> <span>@Value(Model.Accessories)</span></div>
+                <div class="field"><b>Estado físico:</b> <span>@Value(Model.PhysicalCondition)</span></div>
 
-        <h2>Equipo</h2>
-        <div class="grid">
-            <div class="field"><b>Marca y modelo:</b> <span>@printer.DisplayName</span></div>
-            <div class="field"><b>N.º de serie:</b> <span>@Value(printer.SerialNumber)</span></div>
-            <div class="field"><b>Tecnología:</b> <span>@printer.Technology.Name()</span></div>
-            <div class="field"><b>Tipo:</b> <span>@printer.Category.Name()@(printer.IsMultifunction ? ", multifuncional" : "")@(printer.IsColor ? ", a color" : "")</span></div>
-        </div>
+                <h2>Falla reportada por el cliente</h2>
+                <div class="block">@Model.ReportedIssue</div>
 
-        <h2>Cómo se recibe</h2>
-        <div class="field"><b>Accesorios:</b> <span>@Value(Model.Accessories)</span></div>
-        <div class="field"><b>Estado físico:</b> <span>@Value(Model.PhysicalCondition)</span></div>
+                <h2>Diagnóstico del técnico</h2>
+                <div class="block tall">@Value(Model.Diagnosis)</div>
 
-        <h2>Falla reportada por el cliente</h2>
-        <div class="block">@Model.ReportedIssue</div>
+                <h2>Pendientes / repuestos</h2>
+                <div class="block">@Value(Model.PendingWork)</div>
 
-        <h2>Diagnóstico del técnico</h2>
-        <div class="block tall">@Value(Model.Diagnosis)</div>
+                <h2>Cobro y fechas</h2>
+                <div class="money">
+                    <div class="box"><span>Diagnóstico</span><strong>@Display.Money(shop.DiagnosisFee)</strong></div>
+                    <div class="box"><span>Reparación</span><strong>@(Model.ChargesDiagnosisOnly ? "No se reparó" : Model.Quote.HasValue ? Display.Money(Model.Quote) : "₡")</strong></div>
+                    <div class="box"><span>Adelanto</span><strong>@Display.Money(Model.Deposit)</strong></div>
+                    <div class="box"><span>Saldo</span><strong>@(Model.HasFinalPrice ? Display.Money(Model.AmountDue(shop.DiagnosisFee)) : "₡")</strong></div>
+                </div>
+                <div class="grid" style="margin-top:2mm">
+                    <div class="field"><b>Fecha estimada:</b> <span>@(Model.EstimatedDate.HasValue ? Display.Date(Model.EstimatedDate) : "")</span></div>
+                    <div class="field"><b>Garantía:</b> <span>@warrantyText</span></div>
+                </div>
 
-        <h2>Pendientes / repuestos</h2>
-        <div class="block">@Value(Model.PendingWork)</div>
-
-        <h2>Cobro y fechas</h2>
-        <div class="money">
-            <div class="box"><span>Diagnóstico</span><strong>@Display.Money(shop.DiagnosisFee)</strong></div>
-            <div class="box"><span>Reparación</span><strong>@(Model.ChargesDiagnosisOnly ? "No se reparó" : Model.Quote.HasValue ? Display.Money(Model.Quote) : "₡")</strong></div>
-            <div class="box"><span>Adelanto</span><strong>@Display.Money(Model.Deposit)</strong></div>
-            <div class="box"><span>Saldo</span><strong>@(Model.HasFinalPrice ? Display.Money(Model.AmountDue(shop.DiagnosisFee)) : "₡")</strong></div>
-        </div>
-        <div class="grid" style="margin-top:2mm">
-            <div class="field"><b>Fecha estimada:</b> <span>@(Model.EstimatedDate.HasValue ? Display.Date(Model.EstimatedDate) : "")</span></div>
-            <div class="field"><b>Garantía:</b> <span>@warrantyText</span></div>
-        </div>
-
-        @if (shop.TermsText().Any())
-        {
-            <h2>Condiciones</h2>
-            <ol class="terms">
-                @foreach (var term in shop.TermsText())
+                @if (shop.TermsText().Any())
                 {
-                    <li>@term</li>
+                    <h2>Condiciones</h2>
+                    <ol class="terms">
+                        @foreach (var term in shop.TermsText())
+                        {
+                            <li>@term</li>
+                        }
+                    </ol>
                 }
-            </ol>
-        }
 
-        <div class="signatures">
-            <div>Firma del cliente</div>
-            <div>Recibido por (@shop.Name)</div>
-        </div>
+                <div class="signatures">
+                    <div>Firma del cliente</div>
+                    <div>Recibido por (@shop.Name)</div>
+                </div>
 
-        <div class="pickup">
-            <div>
-                <div class="big">Orden @Model.Number</div>
-                <small>Presente esta boleta o indique el número de orden para retirar su equipo.</small>
+                <div class="pickup">
+                    <div>
+                        <div class="big">Orden @Model.Number</div>
+                        <small>Presente esta boleta o indique el número de orden para retirar su equipo.</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(shop.Phone))
+                    {
+                        <div><small>Consultas al</small><div class="big">@shop.Phone</div></div>
+                    }
+                </div>
             </div>
-            @if (!string.IsNullOrWhiteSpace(shop.Phone))
-            {
-                <div><small>Consultas al</small><div class="big">@shop.Phone</div></div>
-            }
         </div>
     </div>
 

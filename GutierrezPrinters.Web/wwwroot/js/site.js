@@ -122,8 +122,79 @@
         }
     }
 
+    // ---------- 3. Boleta: nunca más de una hoja carta ----------
+    // El contenido de [data-fit-page="ANCHOxALTO"] (área imprimible en mm) se achica solo lo
+    // necesario para que quepa en una hoja. Si ya cabe, queda en su tamaño normal.
+    function fitToPage() {
+        var box = document.querySelector("[data-fit-page]");
+        if (!box || !box.firstElementChild) {
+            return;
+        }
+        var content = box.firstElementChild;
+        var size = box.getAttribute("data-fit-page").split("x");
+        var maxRatio = parseFloat(size[1]) / parseFloat(size[0]);
+        var note = document.querySelector("[data-fit-note]");
+
+        // Se compara alto/ancho, así no importa si la hoja se ve achicada en el celular.
+        function fits() {
+            var rect = box.getBoundingClientRect();
+            return rect.width > 0 && rect.height / rect.width <= maxRatio * 0.985;
+        }
+
+        content.style.zoom = "";
+        var zoom = 1;
+        if (!fits() && "zoom" in content.style) {
+            var low = 0.25;
+            var high = 1;
+            for (var i = 0; i < 12; i++) {
+                var mid = (low + high) / 2;
+                content.style.zoom = mid;
+                if (fits()) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+            zoom = low;
+            content.style.zoom = zoom;
+        }
+        if (note) {
+            note.hidden = zoom >= 1;
+        }
+    }
+
+    // En el celular la hoja completa se ve a lo ancho de la pantalla (solo en pantalla).
+    function fitPaperToScreen() {
+        var paper = document.querySelector(".paper");
+        if (!paper) {
+            return;
+        }
+        var root = document.documentElement;
+        root.style.removeProperty("--screen-zoom");
+        var available = root.clientWidth - 16;
+        var zoom = Math.min(1, available / paper.offsetWidth);
+        root.style.setProperty("--screen-zoom", zoom.toFixed(3));
+    }
+
+    function setupPrintPage() {
+        if (!document.querySelector("[data-fit-page]")) {
+            return;
+        }
+        fitPaperToScreen();
+        fitToPage();
+        // Cuando termina de cargar la letra, se vuelve a medir.
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(fitToPage);
+        }
+        // Se mide en pantalla, donde el ancho es igual al de la hoja impresa. No se vuelve a medir
+        // al imprimir: en ese momento el navegador puede dar medidas que no sirven.
+        window.addEventListener("load", fitToPage);
+        window.addEventListener("resize", fitPaperToScreen);
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         renderQrCodes();
         setupNewOrderForm();
+        setupPrintPage();
     });
 })();

@@ -7,6 +7,14 @@
     <!-- Identificador de los "secretos de usuario": ahí van la contraseña de Supabase
          y la del usuario administrador. Esos secretos viven en tu compu, NUNCA en GitHub. -->
     <UserSecretsId>gutierrez-printers-web-2026</UserSecretsId>
+    <!-- Solo se publican los textos en español de las librerías (menos archivos que subir y cargar). -->
+    <SatelliteResourceLanguages>es</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!-- Al publicar a Azure (win-x86) el código ya va precompilado (ReadyToRun):
+       el sistema arranca bastante más rápido cuando Azure lo despierta. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>

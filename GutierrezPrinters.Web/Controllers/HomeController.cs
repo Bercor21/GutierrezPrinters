@@ -58,8 +58,9 @@ public class HomeController : Controller
         return View(model);
     }
 
-    // "Despertador": GitHub lo visita todos los días (ver .github/workflows/mantener-activo.yml)
-    // para que Supabase vea actividad y no pause la base de datos.
+    // "Despertador": el propio sistema la visita cada 4 minutos (Services/KeepAwakeService.cs)
+    // y GitHub una vez al día de respaldo (.github/workflows/mantener-activo.yml).
+    // Así Azure no lo apaga y Supabase no pausa la base de datos.
     // Solo LEE la base (pregunta si hay clientes); no cambia ni muestra ningún dato.
     [AllowAnonymous]
     [HttpGet]

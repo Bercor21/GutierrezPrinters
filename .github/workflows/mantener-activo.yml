@@ -1,9 +1,11 @@
-# Despertador del sistema: todos los días visita /Home/Ping en Azure.
-# Esa página hace una consulta de solo lectura a Supabase, así la base de datos
-# siempre tiene actividad y el plan gratis no la pausa. No cambia ningún dato.
+# Despertador de respaldo: todos los días visita /Home/Ping en Azure.
+# El sistema ya se mantiene despierto solo (Services/KeepAwakeService.cs), pero si Azure
+# llegara a apagarlo, esta visita diaria lo vuelve a encender y le da actividad a Supabase
+# para que el plan gratis no pause la base de datos. No cambia ningún dato.
 #
 # La dirección del sistema va en un secreto del repositorio llamado APP_URL
 # (GitHub → Settings → Secrets and variables → Actions), para no publicarla aquí.
+# Sin ese secreto, cada corrida falla con el mensaje "Falta el secreto APP_URL".
 
 name: Mantener activo
 
