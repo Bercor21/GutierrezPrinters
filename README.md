@@ -12,12 +12,12 @@ estados y buscador. Funciona desde la computadora y desde el celular.
 - **Etiqueta adhesiva 4 × 6 con QR** para pegar en la impresora. Al escanearla con el celular
   se abre la ficha completa de la orden.
 - **Boleta de ingreso** en papel tamaño carta: la copia del cliente, con las condiciones del
-  taller y las firmas.
+  taller y las firmas. Siempre sale en una sola hoja.
 - **Estados:** recibida, en diagnóstico, esperando aprobación, esperando repuesto,
   en reparación, lista, no se pudo reparar, entregada, entregada sin reparar y enviada a
   reciclaje.
 - **Reglas del taller:** garantía de 6 meses que se pone sola al entregar, diagnóstico de
-  ₡7 000 que se cobra si la impresora no se repara.
+  ₡7 000 que se cobra siempre, se repare o no; la reparación se cobra aparte.
 - **Avisos por WhatsApp** con el mensaje ya escrito según el estado, usando enlaces `wa.me`.
 - **Buscador único** por número de orden, cliente, teléfono (con o sin guion), marca,
   modelo o número de serie.
@@ -25,6 +25,8 @@ estados y buscador. Funciona desde la computadora y desde el celular.
 - **Alertas** de órdenes atrasadas y de impresoras que llevan 30 días sin que las retiren,
   con un recordatorio por WhatsApp y la opción de enviarlas a reciclaje.
 - **Respaldo en Excel** de órdenes, equipos y clientes.
+- **Eliminar** una impresora (con sus órdenes) o un cliente (con sus impresoras y órdenes),
+  desde el final de su ficha. Solo lo pueden hacer los administradores y pide confirmación.
 - **Inicio de sesión** obligatorio. No hay registro público: los administradores crean las
   cuentas en **Usuarios** (menú de arriba a la derecha), cambian contraseñas y dan o quitan
   permisos de administrador.

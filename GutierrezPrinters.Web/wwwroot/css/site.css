@@ -406,6 +406,26 @@ main {
   --bs-btn-active-border-color: var(--gp-magenta-dark);
 }
 
+/* Zona para borrar (solo administradores): separada y en magenta para que no se toque sin querer. */
+.danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--gp-magenta-tint);
+  border-left: 4px solid var(--gp-magenta);
+  border-radius: var(--gp-radius);
+  background: var(--gp-paper);
+}
+
+.danger-zone-title {
+  font-weight: 700;
+  color: var(--gp-magenta);
+}
+
 .btn-whatsapp {
   --bs-btn-color: #fff;
   --bs-btn-bg: #1b8a4c;
