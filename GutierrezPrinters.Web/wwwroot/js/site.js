@@ -192,6 +192,15 @@
         window.addEventListener("resize", fitPaperToScreen);
     }
 
+    // ---------- 4. Confirmar antes de enviar ----------
+    // Un <form data-confirm="¿Seguro?"> pregunta antes de enviarse (por ejemplo, al eliminar).
+    document.addEventListener("submit", function (event) {
+        var message = event.target.getAttribute && event.target.getAttribute("data-confirm");
+        if (message && !window.confirm(message)) {
+            event.preventDefault();
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", function () {
         renderQrCodes();
         setupNewOrderForm();

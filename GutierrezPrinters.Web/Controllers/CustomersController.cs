@@ -1,6 +1,7 @@
 using GutierrezPrinters.Web.Data;
 using GutierrezPrinters.Web.Models;
 using GutierrezPrinters.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,6 +79,40 @@ public class CustomersController : Controller
 
         TempData["Message"] = "Cliente actualizado.";
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // Borra el cliente con todas sus impresoras y órdenes. Solo administradores; no se puede deshacer.
+    [HttpPost]
+    [Authorize(Roles = SeedData.AdminRole)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var customer = await _db.Customers
+            .Include(c => c.Printers).ThenInclude(p => p.Orders)
+            .FirstOrDefaultAsync(c => c.Id == id);
+        if (customer == null)
+        {
+            return NotFound();
+        }
+
+        var printerCount = customer.Printers.Count;
+        var orderCount = customer.Printers.Sum(p => p.Orders.Count);
+
+        foreach (var printer in customer.Printers.ToList())
+        {
+            foreach (var order in printer.Orders.ToList())
+            {
+                _db.RepairOrders.Remove(order);
+            }
+            _db.Printers.Remove(printer);
+        }
+        _db.Customers.Remove(customer);
+        await _db.SaveChangesAsync(); // todo junto: o se borra todo o nada
+
+        TempData["Message"] = printerCount == 0
+            ? $"Cliente {customer.Name} eliminado."
+            : $"Cliente {customer.Name} eliminado, con {printerCount} {(printerCount == 1 ? "impresora" : "impresoras")} " +
+              $"y {orderCount} {(orderCount == 1 ? "orden" : "órdenes")}.";
+        return RedirectToAction(nameof(Index));
     }
 
     // Lo usa el formulario de ingreso: al escribir el teléfono, trae al cliente si ya existe.

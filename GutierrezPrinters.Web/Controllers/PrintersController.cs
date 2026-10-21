@@ -1,5 +1,6 @@
 using GutierrezPrinters.Web.Data;
 using GutierrezPrinters.Web.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,5 +63,35 @@ public class PrintersController : Controller
 
         TempData["Message"] = "Equipo actualizado.";
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // Borra la impresora y todas sus órdenes. Solo administradores; no se puede deshacer.
+    [HttpPost]
+    [Authorize(Roles = SeedData.AdminRole)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var printer = await _db.Printers
+            .Include(p => p.Orders)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (printer == null)
+        {
+            return NotFound();
+        }
+
+        var customerId = printer.CustomerId;
+        var name = printer.DisplayName;
+        var orderCount = printer.Orders.Count;
+
+        foreach (var order in printer.Orders.ToList())
+        {
+            _db.RepairOrders.Remove(order);
+        }
+        _db.Printers.Remove(printer);
+        await _db.SaveChangesAsync(); // todo junto: o se borra todo o nada
+
+        TempData["Message"] = orderCount == 0
+            ? $"Impresora {name} eliminada."
+            : $"Impresora {name} eliminada, con {orderCount} {(orderCount == 1 ? "orden" : "órdenes")}.";
+        return RedirectToAction("Details", "Customers", new { id = customerId });
     }
 }

@@ -6,6 +6,10 @@
     {
         o.Printer = Model;
     }
+
+    var whatGoes = orders.Count == 0 ? "" : $" con {orders.Count} {(orders.Count == 1 ? "orden" : "órdenes")}";
+    var deleteNote = $"Se borra esta impresora{whatGoes}. El cliente se queda. No se puede deshacer.";
+    var deleteQuestion = $"¿Eliminar la impresora {Model.DisplayName}{whatGoes}? Esto no se puede deshacer.";
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
@@ -71,3 +75,17 @@
         </div>
     </div>
 </div>
+
+@if (User.IsInRole(SeedData.AdminRole))
+{
+    <div class="danger-zone">
+        <div>
+            <div class="danger-zone-title">Eliminar impresora</div>
+            <div class="text-body-secondary small">@deleteNote</div>
+        </div>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+              data-confirm="@deleteQuestion">
+            <button type="submit" class="btn btn-outline-magenta">Eliminar impresora</button>
+        </form>
+    </div>
+}
